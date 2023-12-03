@@ -11,6 +11,7 @@
 #include "platform/platform_io_internal.h"
 #include "runtime_memory.h"
 #include "runtime_clipboard.h"
+#include "wasm/wasm.h"
 
 #include "m3_compile.h"
 #include "m3_env.h"
@@ -68,6 +69,8 @@ typedef struct oc_wasm_env
 {
     oc_str8 wasmBytecode;
     oc_wasm_memory wasmMemory;
+
+    oc_wasm* wasm;
 
     // wasm3 data
     IM3Environment m3Env;

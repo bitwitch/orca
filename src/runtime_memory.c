@@ -8,6 +8,7 @@
 #include <limits.h>
 #include "runtime.h"
 #include "runtime_memory.h"
+#include "wasm/wasm.h"
 
 void* oc_wasm_memory_resize_callback(void* p, unsigned long newSize, void* userData)
 {
@@ -55,7 +56,8 @@ extern u32 oc_mem_grow(u64 size)
     oc_wasm_env* env = oc_runtime_get_env();
     oc_wasm_memory* memory = &env->wasmMemory;
 
-    u32 oldMemSize = m3_GetMemorySize(env->m3Runtime);
+    u64 oldMemSize = oc_wasm_mem_size(env->wasm);
+    // u32 oldMemSize = m3_GetMemorySize(env->m3Runtime);
 
     //NOTE: compute total size and align on wasm memory page size
     OC_ASSERT(oldMemSize <= UINT_MAX - size, "Memory size overflow");

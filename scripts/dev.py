@@ -132,6 +132,7 @@ def build_platform_layer_lib_win(release):
         "/I", "src",
         "/I", "src/ext",
         "/I", "src/ext/angle/include",
+        "/I", "src/ext/wasm3/source",
     ]
     libs = [
         "user32.lib",
@@ -147,6 +148,8 @@ def build_platform_layer_lib_win(release):
         "dxgi.lib",
         "dxguid.lib",
         "/LIBPATH:src/ext/angle/lib",
+        "/LIBPATH:build/bin/",
+        "wasm3.lib",
         "libEGL.dll.lib",
         "libGLESv2.dll.lib",
         "/DELAYLOAD:libEGL.dll",
@@ -343,7 +346,8 @@ def build_orca_mac(release):
         "-Isrc/ext/angle/include",
         "-Isrc/ext/wasm3/source"
     ]
-    libs = ["-Lbuild/bin", "-Lbuild/lib", "-lorca", "-lwasm3"]
+    # libs = ["-Lbuild/bin", "-Lbuild/lib", "-lorca", "-lwasm3"]
+    libs = ["-Lbuild/bin", "-Lbuild/lib", "-lorca"]
     debug_flags = ["-O2"] if release else ["-g", "-DOC_DEBUG -DOC_LOG_COMPILE_DEBUG"]
     flags = [
         *debug_flags,

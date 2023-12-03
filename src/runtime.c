@@ -491,10 +491,11 @@ i32 orca_runloop(void* user)
     fread(app->env.wasmBytecode.ptr, 1, app->env.wasmBytecode.len, file);
     fclose(file);
 
-    u32 stackSize = 65536;
-    app->env.m3Env = m3_NewEnvironment();
+    app->env.wasm = oc_wasm_create(OC_WASM_BACKEND_TYPE_WASM3);
 
-    app->env.m3Runtime = m3_NewRuntime(app->env.m3Env, stackSize, NULL);
+    app->env.m3Env = oc_wasm_m3env_temp(app->env.wasm);
+    app->env.m3Runtime = oc_wasm_m3runtime_temp(app->env.wasm);
+
     //NOTE: host memory will be freed when runtime is freed.
     m3_RuntimeSetMemoryCallbacks(app->env.m3Runtime, oc_wasm_memory_resize_callback, oc_wasm_memory_free_callback, &app->env.wasmMemory);
 
