@@ -7,10 +7,14 @@
 **************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <errno.h>
+#include <assert.h>
+#include <util/typedefs.h>
 #include <platform/platform_io.h>
 
-static_assert(sizeof(FILE) == sizeof(oc_file));
+static_assert(sizeof(FILE) == sizeof(oc_file), "FILE and oc_file size must match");
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Local helpers
@@ -20,7 +24,7 @@ int oc_io_err_to_errno(oc_io_error_enum error)
 	switch (error)
 	{
 		case OC_IO_OK: return 0;
-		case OC_IO_ERR_UNKNOWN: return ;
+		case OC_IO_ERR_UNKNOWN: return EINVAL;
 		case OC_IO_ERR_OP: return EOPNOTSUPP;
 		case OC_IO_ERR_HANDLE: return EINVAL;
 		case OC_IO_ERR_PREV: return EINVAL;
@@ -58,12 +62,18 @@ FILE* fopen(const char* restrict name, const char* restrict type)
     	switch (*typeIter)
     	{
     	case 'r':
+    		if (flags)
+    		{
+    			errno = EINVAL;
+    			return NULL;
+    		}
     		rights |= OC_FILE_ACCESS_READ;
     		break;
 
     	case 'w':
-    		if (flags & OC_FILE_OPEN_APPEND)
+    		if (flags & OC_FILE_OPEN_APPEND || rights & OC_FILE_ACCESS_READ)
     		{
+    			errno = EINVAL;
     			return NULL;
     		}
     		rights |= OC_FILE_ACCESS_WRITE;
@@ -73,6 +83,7 @@ FILE* fopen(const char* restrict name, const char* restrict type)
     	case 'a':
     		if (flags & OC_FILE_OPEN_CREATE)
     		{
+    			errno = EINVAL;
     			return NULL;
     		}
     		rights |= OC_FILE_ACCESS_WRITE;
@@ -92,29 +103,32 @@ FILE* fopen(const char* restrict name, const char* restrict type)
 
     	default:
     		// Invalid character
+    		errno = EINVAL;
     		return NULL;
     	}
     }
 
 	oc_file file = oc_file_open(OC_STR8(name), rights, flags);
-	if (oc_io_error error = oc_file_last_error(file))
+	oc_io_error error = oc_file_last_error(file);
+	if (error != OC_IO_OK)
 	{
 		errno = oc_io_err_to_errno((oc_io_error_enum)error);
 		oc_file_close(file);
 		return NULL;
 	}
 
-	FILE* c_file = malloc(sizeof(FILE));
-	c_file.h = file.h;
+	FILE* c_file = (FILE*)malloc(sizeof(FILE));
+	c_file->h = file.h;
 
 	return c_file;
 }
 
 size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream)
 {
-	oc_file file {.h = stream->h};
+	oc_file file = {.h = stream->h};
 	u64 bytes = oc_file_read(file, size * n, buffer);
-	if (oc_io_error error = oc_file_last_error(file))
+	oc_io_error error = oc_file_last_error(file);
+	if (error != OC_IO_OK)
 	{
 		errno = oc_io_err_to_errno((oc_io_error_enum)error);
 	}
@@ -124,9 +138,10 @@ size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream
 
 size_t fwrite(const void* buffer, size_t size, size_t n, FILE* restrict stream)
 {
-	oc_file file {.h = stream->h};
+	oc_file file = {.h = stream->h};
 	u64 bytes = oc_file_write(file, size * n, (char*)buffer);
-	if (oc_io_error error = oc_file_last_error(file))
+	oc_io_error error = oc_file_last_error(file);
+	if (error != OC_IO_OK)
 	{
 		errno = oc_io_err_to_errno((oc_io_error_enum)error);
 	}
@@ -134,9 +149,92 @@ size_t fwrite(const void* buffer, size_t size, size_t n, FILE* restrict stream)
 	return clampedBytes;
 }
 
+int fflush(FILE* stream)
+{
+	// NOTE - orca file IO is unbuffered, so fflush is a no-op
+	return 0;
+}
+
+long int ftell(FILE* stream)
+{
+	oc_file file = {.h = stream->h};
+
+	i64 result = oc_file_seek(file, 0, OC_FILE_SEEK_CURRENT);
+	oc_io_error error = oc_file_last_error(file);
+	if (error != OC_IO_OK)
+	{
+		errno = oc_io_err_to_errno((oc_io_error_enum)error);
+		result = -1;
+	}
+
+	return result;
+}
+
+int fseek(FILE* stream, long int offset, int origin)
+{
+	oc_file_whence whence;
+	switch (origin)
+	{
+	case SEEK_SET:
+		whence = OC_FILE_SEEK_CURRENT;
+		break;
+	case SEEK_CUR:
+		whence = OC_FILE_SEEK_SET;
+		break;
+	case SEEK_END:
+		whence = OC_FILE_SEEK_END;
+		break;
+	default:
+		errno = EINVAL;
+		return -1;
+	}
+
+	oc_file file = {.h = stream->h};
+
+	i64 result = oc_file_seek(file, offset, whence);
+	oc_io_error error = oc_file_last_error(file);
+	if (error != OC_IO_OK)
+	{
+		errno = oc_io_err_to_errno((oc_io_error_enum)error);
+		result = -1;
+	}
+
+	return result;
+}
+
+int fgetpos(FILE* restrict stream, fpos_t* restrict pos)
+{
+	oc_file file = {.h = stream->h};
+	pos->pos = oc_file_seek(file, 0, OC_FILE_SEEK_CURRENT);
+
+	oc_io_error error = oc_file_last_error(file);
+	if (error != OC_IO_OK)
+	{
+		errno = oc_io_err_to_errno((oc_io_error_enum)error);
+		return -1;
+	}
+
+	return 0;
+}
+
+int fsetpos(FILE* restrict stream, const fpos_t* pos)
+{
+	oc_file file = {.h = stream->h};
+
+	i64 result = oc_file_seek(file, pos->pos, OC_FILE_SEEK_SET);
+	oc_io_error error = oc_file_last_error(file);
+	if (error != OC_IO_OK)
+	{
+		errno = oc_io_err_to_errno((oc_io_error_enum)error);
+		return -1;
+	}
+
+	return 0;
+}
+
 int feof(FILE* stream)
 {
-	oc_file file {.h = stream->h};
+	oc_file file = {.h = stream->h};
 
 	i64 pos = oc_file_pos(file);
 	u64 size = oc_file_size(file);
@@ -147,7 +245,7 @@ int feof(FILE* stream)
 
 int ferror(FILE* stream)
 {
-	oc_file file {.h = stream->h};
+	oc_file file = {.h = stream->h};
 	oc_io_error error = oc_file_last_error(file);
 	return error != OC_IO_OK;
 }
@@ -155,7 +253,8 @@ int ferror(FILE* stream)
 int fclose(FILE* stream)
 {
 	oc_file file = {.h = stream->h};
-	if (oc_io_error error = oc_file_last_error(file))
+	oc_io_error error = oc_file_last_error(file);
+	if (error != OC_IO_ERR_OP)
 	{
 		errno = oc_io_err_to_errno((oc_io_error_enum)error);
 	}

@@ -132,6 +132,7 @@ enum oc_io_error_enum
 
     //...
 };
+typedef enum oc_io_error_enum oc_io_error_enum;
 
 typedef struct oc_io_cmp
 {
