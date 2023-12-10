@@ -37,23 +37,47 @@ extern "C" {
 #define FILENAME_MAX 4096
 #define FOPEN_MAX 1000
 
-typedef union _G_fpos64_t {
-	char __opaque[16];
-	long long __lldata;
-	double __align;
+typedef union _G_fpos64_t
+{
+    char __opaque[16];
+    long long __lldata;
+    double __align;
 } fpos_t;
 
-int sprintf(char *__restrict, const char *__restrict, ...);
-int snprintf(char *__restrict, size_t, const char *__restrict, ...);
+// same layout as oc_file to be used interchangably
+typedef struct FILE
+{
+    long long unsigned h;
+} FILE;
 
-int vsprintf(char *__restrict, const char *__restrict, __isoc_va_list);
-int vsnprintf(char *__restrict, size_t, const char *__restrict, __isoc_va_list);
+typedef struct fpos_t
+{
+    long long int pos;
+} fpos_t;
 
-int sscanf(const char *__restrict, const char *__restrict, ...);
-int vsscanf(const char *__restrict, const char *__restrict, __isoc_va_list);
+FILE* fopen(const char* restrict name, const char* restrict type);
+size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
+size_t fwrite(const void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
+long int ftell(FILE* stream);
+int fseek(FILE* stream, long int offset, int origin);
+int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
+int fsetpos(FILE* restrict stream, const fpos_t* pos);
+int fflush(FILE* stream);
+int feof(FILE* stream);
+int ferror(FILE* stream);
+int fclose(FILE* stream);
 
-int asprintf(char **, const char *, ...);
-int vasprintf(char **, const char *, __isoc_va_list);
+int sprintf(char* __restrict, const char* __restrict, ...);
+int snprintf(char* __restrict, size_t, const char* __restrict, ...);
+
+int vsprintf(char* __restrict, const char* __restrict, __isoc_va_list);
+int vsnprintf(char* __restrict, size_t, const char* __restrict, __isoc_va_list);
+
+int sscanf(const char* __restrict, const char* __restrict, ...);
+int vsscanf(const char* __restrict, const char* __restrict, __isoc_va_list);
+
+int asprintf(char**, const char*, ...);
+int vasprintf(char**, const char*, __isoc_va_list);
 
 #ifdef __cplusplus
 }
