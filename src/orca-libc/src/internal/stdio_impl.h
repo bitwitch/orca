@@ -34,7 +34,7 @@ struct _IO_FILE
 {
     unsigned flags;
     unsigned char *rpos, *rend;
-    int (*close)(FILE*);
+    // int (*close)(FILE*);
     unsigned char *wend, *wpos;
 
     unsigned char* wbase;
@@ -44,7 +44,7 @@ struct _IO_FILE
     unsigned char* buf;
     size_t buf_size;
     FILE *prev, *next;
-    int fd;
+    long long unsigned orca_file;
 
 #if defined(_REENTRANT)
     long lockcount;

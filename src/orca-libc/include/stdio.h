@@ -44,17 +44,6 @@ typedef union _G_fpos64_t
     double __align;
 } fpos_t;
 
-// same layout as oc_file to be used interchangably
-typedef struct FILE
-{
-    long long unsigned h;
-} FILE;
-
-typedef struct fpos_t
-{
-    long long int pos;
-} fpos_t;
-
 FILE* fopen(const char* restrict name, const char* restrict type);
 size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
 size_t fwrite(const void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
@@ -63,8 +52,8 @@ int fseek(FILE* stream, long int offset, int origin);
 int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
 int fsetpos(FILE* restrict stream, const fpos_t* pos);
 int fflush(FILE* stream);
-int feof(FILE* stream);
-int ferror(FILE* stream);
+// int feof(FILE* stream);
+// int ferror(FILE* stream);
 int fclose(FILE* stream);
 
 int sprintf(char* __restrict, const char* __restrict, ...);
