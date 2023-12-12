@@ -52,8 +52,6 @@ int fseek(FILE* stream, long int offset, int origin);
 int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
 int fsetpos(FILE* restrict stream, const fpos_t* pos);
 int fflush(FILE* stream);
-// int feof(FILE* stream);
-// int ferror(FILE* stream);
 int fclose(FILE* stream);
 
 int sprintf(char* __restrict, const char* __restrict, ...);
@@ -61,9 +59,13 @@ int snprintf(char* __restrict, size_t, const char* __restrict, ...);
 
 int vsprintf(char* __restrict, const char* __restrict, __isoc_va_list);
 int vsnprintf(char* __restrict, size_t, const char* __restrict, __isoc_va_list);
+int fprintf(FILE *restrict f, const char *restrict fmt, ...);
+int vfprintf(FILE *restrict f, const char *restrict fmt, va_list ap);
 
 int sscanf(const char* __restrict, const char* __restrict, ...);
 int vsscanf(const char* __restrict, const char* __restrict, __isoc_va_list);
+int fscanf(FILE *restrict f, const char *restrict fmt, ...);
+int vfscanf(FILE* restrict f, const char* restrict fmt, va_list ap);
 
 int asprintf(char**, const char*, ...);
 int vasprintf(char**, const char*, __isoc_va_list);

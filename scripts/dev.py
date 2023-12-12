@@ -423,6 +423,7 @@ def build_libc(release):
     includes = [
         "-Isrc",
         "-isystem", "src/orca-libc/include",
+        "-isystem", "src/orca-libc/include/private",
         "-Isrc/orca-libc/src/arch",
         "-Isrc/orca-libc/src/internal"
     ]

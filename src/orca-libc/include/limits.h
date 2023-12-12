@@ -68,6 +68,11 @@
 #define COLL_WEIGHTS_MAX 2
 #define RE_DUP_MAX 255
 
+#define NL_ARGMAX 9
+#define NL_MSGMAX 32767
+#define NL_SETMAX 255
+#define NL_TEXTMAX 2048
+
 #ifdef PAGESIZE
 #define PAGE_SIZE PAGESIZE
 #endif
