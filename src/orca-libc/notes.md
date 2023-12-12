@@ -3,7 +3,7 @@ To Review:
 
 - `exit`, `assert`
 
-Should be inculded by missing or incomplete:
+Should be included but missing or incomplete:
 
 - `malloc` --> replace with our modified `dlmalloc`
 - in `stdio.h`: `scanf` family
