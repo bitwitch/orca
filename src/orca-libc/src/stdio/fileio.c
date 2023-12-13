@@ -162,124 +162,124 @@ FILE* fopen(const char* restrict name, const char* restrict type)
     return c_file;
 }
 
-size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream)
-{
-    oc_file file = { .h = stream->orca_file };
-    u64 bytes = oc_file_read(file, size * n, buffer);
-    oc_io_error error = oc_file_last_error(file);
-    if(error != OC_IO_OK)
-    {
-        errno = oc_io_err_to_errno(error);
-        stream->flags |= F_ERR;
-    }
-    size_t clampedBytes = (bytes > SIZE_MAX) ? SIZE_MAX : (size_t)bytes;
-    if(clampedBytes != bytes)
-    {
-        stream->flags |= F_EOF;
-    }
-    return clampedBytes;
-}
+// size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream)
+// {
+//     oc_file file = { .h = stream->orca_file };
+//     u64 bytes = oc_file_read(file, size * n, buffer);
+//     oc_io_error error = oc_file_last_error(file);
+//     if(error != OC_IO_OK)
+//     {
+//         errno = oc_io_err_to_errno(error);
+//         stream->flags |= F_ERR;
+//     }
+//     size_t clampedBytes = (bytes > SIZE_MAX) ? SIZE_MAX : (size_t)bytes;
+//     if (clampedBytes != bytes)
+//     {
+//         stream->flags |= F_EOF;
+//     }
+//     return clampedBytes;
+// }
 
-size_t fwrite(const void* buffer, size_t size, size_t n, FILE* restrict stream)
-{
-    oc_file file = { .h = stream->orca_file };
-    u64 bytes = oc_file_write(file, size * n, (char*)buffer);
-    oc_io_error error = oc_file_last_error(file);
-    if(error != OC_IO_OK)
-    {
-        errno = oc_io_err_to_errno(error);
-        stream->flags |= F_ERR;
-    }
-    size_t clampedBytes = (bytes > SIZE_MAX) ? SIZE_MAX : (size_t)bytes;
-    return clampedBytes;
-}
+// size_t fwrite(const void* buffer, size_t size, size_t n, FILE* restrict stream)
+// {
+//     oc_file file = { .h = stream->orca_file };
+//     u64 bytes = oc_file_write(file, size * n, (char*)buffer);
+//     oc_io_error error = oc_file_last_error(file);
+//     if(error != OC_IO_OK)
+//     {
+//         errno = oc_io_err_to_errno(error);
+//         stream->flags |= F_ERR;
+//     }
+//     size_t clampedBytes = (bytes > SIZE_MAX) ? SIZE_MAX : (size_t)bytes;
+//     return clampedBytes;
+// }
 
-int fflush(FILE* stream)
-{
-    // NOTE - orca file IO is unbuffered, so fflush is a no-op
-    return 0;
-}
+// int fflush(FILE* stream)
+// {
+//     // NOTE - orca file IO is unbuffered, so fflush is a no-op
+//     return 0;
+// }
 
-long int ftell(FILE* stream)
-{
-    oc_file file = { .h = stream->orca_file };
+// long int ftell(FILE* stream)
+// {
+//     oc_file file = { .h = stream->orca_file };
 
-    i64 result = oc_file_seek(file, 0, OC_FILE_SEEK_CURRENT);
-    oc_io_error error = oc_file_last_error(file);
-    if(error != OC_IO_OK)
-    {
-        errno = oc_io_err_to_errno(error);
-        stream->flags |= F_ERR;
-        result = -1;
-    }
+//     i64 result = oc_file_seek(file, 0, OC_FILE_SEEK_CURRENT);
+//     oc_io_error error = oc_file_last_error(file);
+//     if(error != OC_IO_OK)
+//     {
+//         errno = oc_io_err_to_errno(error);
+//         stream->flags |= F_ERR;
+//         result = -1;
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
-int fseek(FILE* stream, long int offset, int origin)
-{
-    oc_file_whence whence;
-    switch(origin)
-    {
-        case SEEK_SET:
-            whence = OC_FILE_SEEK_CURRENT;
-            break;
-        case SEEK_CUR:
-            whence = OC_FILE_SEEK_SET;
-            break;
-        case SEEK_END:
-            whence = OC_FILE_SEEK_END;
-            break;
-        default:
-            errno = EINVAL;
-            return -1;
-    }
+// int fseek(FILE* stream, long int offset, int origin)
+// {
+//     oc_file_whence whence;
+//     switch(origin)
+//     {
+//         case SEEK_SET:
+//             whence = OC_FILE_SEEK_CURRENT;
+//             break;
+//         case SEEK_CUR:
+//             whence = OC_FILE_SEEK_SET;
+//             break;
+//         case SEEK_END:
+//             whence = OC_FILE_SEEK_END;
+//             break;
+//         default:
+//             errno = EINVAL;
+//             return -1;
+//     }
 
-    oc_file file = { .h = stream->orca_file };
+//     oc_file file = { .h = stream->orca_file };
 
-    i64 result = oc_file_seek(file, offset, whence);
-    oc_io_error error = oc_file_last_error(file);
-    if(error != OC_IO_OK)
-    {
-        errno = oc_io_err_to_errno(error);
-        stream->flags |= F_ERR;
-        result = -1;
-    }
+//     i64 result = oc_file_seek(file, offset, whence);
+//     oc_io_error error = oc_file_last_error(file);
+//     if(error != OC_IO_OK)
+//     {
+//         errno = oc_io_err_to_errno(error);
+//         stream->flags |= F_ERR;
+//         result = -1;
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
-int fgetpos(FILE* restrict stream, fpos_t* restrict pos)
-{
-    oc_file file = { .h = stream->orca_file };
-    pos->__lldata = oc_file_seek(file, 0, OC_FILE_SEEK_CURRENT);
+// int fgetpos(FILE* restrict stream, fpos_t* restrict pos)
+// {
+//     oc_file file = { .h = stream->orca_file };
+//     pos->__lldata = oc_file_seek(file, 0, OC_FILE_SEEK_CURRENT);
 
-    oc_io_error error = oc_file_last_error(file);
-    if(error != OC_IO_OK)
-    {
-        errno = oc_io_err_to_errno(error);
-        stream->flags |= F_ERR;
-        return -1;
-    }
+//     oc_io_error error = oc_file_last_error(file);
+//     if(error != OC_IO_OK)
+//     {
+//         errno = oc_io_err_to_errno(error);
+//         stream->flags |= F_ERR;
+//         return -1;
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
-int fsetpos(FILE* restrict stream, const fpos_t* pos)
-{
-    oc_file file = { .h = stream->orca_file };
+// int fsetpos(FILE* restrict stream, const fpos_t* pos)
+// {
+//     oc_file file = { .h = stream->orca_file };
 
-    i64 result = oc_file_seek(file, pos->__lldata, OC_FILE_SEEK_SET);
-    oc_io_error error = oc_file_last_error(file);
-    if(error != OC_IO_OK)
-    {
-        errno = oc_io_err_to_errno(error);
-        stream->flags |= F_ERR;
-        return -1;
-    }
+//     i64 result = oc_file_seek(file, pos->__lldata, OC_FILE_SEEK_SET);
+//     oc_io_error error = oc_file_last_error(file);
+//     if(error != OC_IO_OK)
+//     {
+//         errno = oc_io_err_to_errno(error);
+//         stream->flags |= F_ERR;
+//         return -1;
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
 // int feof(FILE* stream)
 // {
@@ -299,15 +299,15 @@ int fsetpos(FILE* restrict stream, const fpos_t* pos)
 //     return error != OC_IO_OK;
 // }
 
-int fclose(FILE* stream)
-{
-    oc_file file = { .h = stream->orca_file };
-    oc_io_error error = oc_file_last_error(file);
-    if(error != OC_IO_OK)
-    {
-        errno = oc_io_err_to_errno(error);
-    }
-    oc_file_close(file);
-    free(stream);
-    return 0;
-}
+// int fclose(FILE* stream)
+// {
+//     oc_file file = { .h = stream->orca_file };
+//     oc_io_error error = oc_file_last_error(file);
+//     if(error != OC_IO_OK)
+//     {
+//         errno = oc_io_err_to_errno(error);
+//     }
+//     oc_file_close(file);
+//     free(stream);
+//     return 0;
+// }

@@ -34,7 +34,7 @@ struct _IO_FILE
 {
     unsigned flags;
     unsigned char *rpos, *rend;
-    // int (*close)(FILE*);
+    int (*close)(FILE*);
     unsigned char *wend, *wpos;
 
     unsigned char* wbase;
