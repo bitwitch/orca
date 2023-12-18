@@ -96,7 +96,7 @@ hidden off_t __ftello_unlocked(FILE*);
 hidden size_t __fwritex(const unsigned char*, size_t, FILE*);
 hidden int __putc_unlocked(int, FILE*);
 
-hidden FILE* __fdopen(int, const char*);
+hidden FILE* __fdopen(long long unsigned, const char*);
 hidden int __fmodeflags(const char*);
 
 hidden FILE* __ofl_add(FILE* f);
