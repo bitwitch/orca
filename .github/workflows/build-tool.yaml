@@ -1,7 +1,9 @@
 name: build-tool
 
-# TODO: scope more tightly or something
-on: [push]
+on: 
+  push:
+    branches:
+      - main
 
 jobs:
   build-win:
@@ -16,7 +18,7 @@ jobs:
       - name: Build
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           orcadev.bat build-tool
 
       - uses: actions/upload-artifact@v3
