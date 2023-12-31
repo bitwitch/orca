@@ -38,5 +38,5 @@ jobs:
 
         - uses: ncipollo/release-action@v1
           with:
-            artifacts: "orca-win/orca.exe"
+            artifacts: "releases/*"
 
