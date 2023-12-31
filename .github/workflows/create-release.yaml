@@ -1,38 +1,28 @@
 name: create-release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*'
-  workflow_dispatch:
 
 jobs:
-  build-win:
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
-      - name: Build
-        shell: cmd
-        run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          orcadev.bat build-tool
-      - uses: actions/upload-artifact@v3
-        with:
-          name: orca.exe
-          path: build/bin
+  build:
+    uses: ./.github/workflows/build-tool.yaml
 
-  release-win:
-      runs-on: windows-2022
+  release:
+      runs-on: ubuntu-latest
       permissions:
         contents: write
-      needs: build-win
+      needs: build
       steps: 
         - uses: actions/download-artifact@v3
           with:
-            name: orca.exe
+            # when name is not specified, all artifacts from this run will be downloaded
+            path: releases
+            merge-multiple: true # download all artifacts to directory specified by "path"
         - uses: ncipollo/release-action@v1
           with:
-            artifacts: "orca.exe"
+            artifacts: "releases/*"
+
+
