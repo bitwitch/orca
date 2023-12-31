@@ -1,9 +1,7 @@
 name: build-tool
 
-on: 
-  push:
-    branches:
-      - main
+# TODO: scope more tightly or something
+on: [push]
 
 jobs:
   build-win:
