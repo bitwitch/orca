@@ -21,8 +21,8 @@ jobs:
           orcadev.bat build-tool
       - uses: actions/upload-artifact@v3
         with:
-          name: orca-win
-          path: build/bin/orca.exe
+          name: orca.exe
+          path: build/bin
 
   release-win:
       runs-on: windows-2022
@@ -32,8 +32,7 @@ jobs:
       steps: 
         - uses: actions/download-artifact@v3
           with:
-            name: orca-win
-            path: orca.exe
+            name: orca.exe
         - uses: ncipollo/release-action@v1
           with:
             artifacts: "orca.exe"
