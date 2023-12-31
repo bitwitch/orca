@@ -8,7 +8,21 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/build-tool.yaml
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+      - name: Build
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          orcadev.bat build-tool
+      - uses: actions/upload-artifact@v3
+        with:
+          name: orca-win
+          path: build/bin/orca.exe
 
   release:
       runs-on: ubuntu-latest
@@ -24,5 +38,4 @@ jobs:
         - uses: ncipollo/release-action@v1
           with:
             artifacts: "releases/*"
-
 
