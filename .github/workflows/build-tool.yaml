@@ -1,7 +1,7 @@
 name: build-tool
 
 # TODO: scope more tightly or something
-on: [push]
+on: [push, workflow_call]
 
 jobs:
   build-win:
