@@ -16,7 +16,8 @@ jobs:
       runs-on: ubuntu-latest
       permissions:
         contents: write
-      needs: [build-tool, build-runtime]
+      #needs: [build-tool, build-runtime]
+      needs: [build-runtime]
       steps: 
         - uses: actions/download-artifact@v4
           with:
