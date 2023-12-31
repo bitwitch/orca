@@ -19,7 +19,7 @@ jobs:
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           orcadev.bat build-tool
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: orca-win
           path: build/bin/orca.exe
@@ -30,11 +30,13 @@ jobs:
         contents: write
       needs: build
       steps: 
-        - uses: actions/download-artifact@v3
+        - uses: actions/download-artifact@v4
           with:
             # when name is not specified, all artifacts from this run will be downloaded
             path: releases
+            merge-multiple: true # download all artifacts to directory specified by "path"
+
         - uses: ncipollo/release-action@v1
           with:
-            artifacts: "releases/*"
+            artifacts: "orca-win/orca.exe"
 
