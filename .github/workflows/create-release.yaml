@@ -1,0 +1,39 @@
+name: create-release
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  build-win:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+      - name: Build
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          orcadev.bat build-tool
+      - uses: actions/upload-artifact@v3
+        with:
+          name: orca-win
+          path: build/bin/orca.exe
+
+  release-win:
+      runs-on: windows-2022
+      permissions:
+        contents: write
+      needs: build-win
+      steps: 
+        - uses: actions/download-artifact@v3
+          with:
+            name: orca-win
+            path: orca.exe
+        - uses: ncipollo/release-action@v1
+          with:
+            artifacts: "orca.exe"
