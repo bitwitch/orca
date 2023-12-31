@@ -34,7 +34,6 @@ jobs:
           with:
             # when name is not specified, all artifacts from this run will be downloaded
             path: releases
-            merge-multiple: true # download all artifacts to directory specified by "path"
         - uses: ncipollo/release-action@v1
           with:
             artifacts: "releases/*"
