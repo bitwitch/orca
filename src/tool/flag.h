@@ -98,6 +98,8 @@ typedef struct
 
 typedef struct
 {
+    const char* help;
+
     Flag flags[FLAGS_CAP];
     size_t flags_count;
     Flag_Positional positionals[FLAGS_CAP];
@@ -116,6 +118,7 @@ typedef struct
 
 void flag_init_context(Flag_Context* c);
 char* flag_name(void* val);
+void flag_help(Flag_Context* c, const char* help);
 bool* flag_bool(Flag_Context* c, const char* shortName, const char* longName, bool def, const char* desc);
 uint64_t* flag_uint64(Flag_Context* c, const char* shortName, const char* longName, uint64_t def, const char* desc);
 char** flag_str(Flag_Context* c, const char* shortName, const char* longName, const char* def, const char* desc);
@@ -169,6 +172,11 @@ char* flag_name(void* val)
 {
     Flag* flag = (Flag*)((char*)val - offsetof(Flag, val));
     return flag->longName;
+}
+
+void flag_help(Flag_Context* c, const char* help)
+{
+    c->help = help;
 }
 
 bool* flag_bool(Flag_Context* c, const char* shortName, const char* longName, bool def, const char* desc)
@@ -643,6 +651,15 @@ void flag_print_usage(Flag_Context* c, const char* cmd, FILE* f)
         }
 
         w.indent = 0;
+        flag_wrap_fnewline(f, &w);
+    }
+
+    // Extra help
+    oc_str8 help = OC_STR8(c->help);
+    if(help.len > 0)
+    {
+        flag_wrap_fnewline(f, &w);
+        flag_wrap_fprint_autowrap(f, &w, a, help);
         flag_wrap_fnewline(f, &w);
     }
 

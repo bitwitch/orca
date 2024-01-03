@@ -41,6 +41,8 @@ int bundle(int argc, char** argv)
     Flag_Context c;
     flag_init_context(&c);
 
+    flag_help(&c, "Packages a WebAssembly module into a standalone Orca application, along with any required assets.");
+
     char** name = flag_str(&c, "n", "name", "out", "the app's name");
     char** icon = flag_str(&c, "i", "icon", NULL, "an image file to use as the application's icon");
     char** version = flag_str(&c, NULL, "version", "0.0.0", "a version number to embed in the application bundle");

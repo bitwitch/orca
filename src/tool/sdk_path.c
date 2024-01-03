@@ -31,6 +31,8 @@ int sdkPath(int argc, char** argv)
     Flag_Context c;
     flag_init_context(&c);
 
+    flag_help(&c, "Prints the path to the installed Orca SDK. For use in scripts, e.g. `-I $(orca sdk-path)/src`.");
+
     // TODO: version selection
 
     if(!flag_parse(&c, argc, argv))
