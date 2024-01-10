@@ -23,11 +23,9 @@ set wasmFlags=--target=wasm32^
        -D__ORCA__ ^
        -Wl,--no-entry ^
        -Wl,--export-dynamic ^
-       -isystem %STDLIB_DIR%/include ^
+       --sysroot %ORCA_DIR%/build/orca-libc ^
        -I%ORCA_DIR%/src ^
-       -I%ORCA_DIR%/src/ext ^
-       -L%STDLIB_DIR%/lib ^
-       -L%ORCA_DIR%/build/bin
+       -I%ORCA_DIR%/src/ext
 
 :: build orca core as wasm module
 rem clang %wasmFlags% -Wl,--relocatable -o .\liborca.a %ORCA_DIR%\src\orca.c %ORCA_DIR%\src\libc-shim\src\*.c
@@ -52,7 +50,7 @@ call python ../../scripts/embed_text_files.py --prefix=glsl_ --output src/glsl_s
 if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 :: build sample as wasm module and link it with the orca module
-clang %wasmFlags% -lorca_wasm -lc -o module.wasm src/main.c
+clang %wasmFlags% -L %ORCA_DIR%/build/bin -lorca_wasm -lc -o module.wasm src/main.c
 IF %ERRORLEVEL% NEQ 0 EXIT /B %ERRORLEVEL%
 
 :: create app directory and copy files into it
