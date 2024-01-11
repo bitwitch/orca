@@ -166,8 +166,8 @@ static size_t file_write_shim(FILE* stream, const unsigned char* buffer, size_t 
 static off_t file_seek_shim(FILE* stream, off_t offset, int origin)
 {
 	static const oc_file_whence LIBC_WHENCE_TO_OC_WHENCE[3] = {
-		OC_FILE_SEEK_CURRENT, // SEEK_SET
-		OC_FILE_SEEK_SET, // SEEK_CUR
+		OC_FILE_SEEK_SET, // SEEK_SET
+		OC_FILE_SEEK_CURRENT, // SEEK_CUR
 		OC_FILE_SEEK_END, // SEEK_END
 	};
 	oc_file_whence whence = LIBC_WHENCE_TO_OC_WHENCE[origin];
