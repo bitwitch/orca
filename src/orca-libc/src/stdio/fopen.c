@@ -241,9 +241,14 @@ FILE *fopen(const char *restrict filename, const char *restrict mode)
 	}
 
 	oc_file_open_flags orca_flags = OC_FILE_OPEN_RESTRICT;
+
 	if (flags & O_CREAT)
 	{
 		orca_flags |= OC_FILE_OPEN_CREATE;
+	}
+	if (flags & O_TRUNC)
+	{
+		orca_flags |= OC_FILE_OPEN_TRUNCATE;
 	}
 	if (flags & O_APPEND)
 	{

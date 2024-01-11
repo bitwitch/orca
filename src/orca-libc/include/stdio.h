@@ -53,6 +53,8 @@ int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
 int fsetpos(FILE* restrict stream, const fpos_t* pos);
 int fflush(FILE* stream);
 int fclose(FILE* stream);
+int feof(FILE* stream);
+int ferror(FILE* stream);
 
 int sprintf(char* __restrict, const char* __restrict, ...);
 int snprintf(char* __restrict, size_t, const char* __restrict, ...);

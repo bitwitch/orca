@@ -112,9 +112,6 @@ hidden void __do_orphaned_stdio_locks(void);
 
 hidden void __getopt_msg(const char*, const char*, const char*, size_t);
 
-#define feof(f) ((f)->flags & F_EOF)
-#define ferror(f) ((f)->flags & F_ERR)
-
 #define getc_unlocked(f) \
     (((f)->rpos != (f)->rend) ? *(f)->rpos++ : __uflow((f)))
 
