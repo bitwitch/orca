@@ -29,19 +29,18 @@ int check_string(FILE* f, oc_str8 test_string)
     return (0);
 }
 
-int test_read()
+int test_read(void)
 {
     {
         oc_str8 path = OC_STR8("regular.txt");
-        oc_str8 test_string = OC_STR8("Hello from regular.txt");
-
         FILE* f = fopen(path.ptr, "r");
-        if(ferror(f))
+        if(f == NULL || ferror(f))
         {
             oc_log_error("Can't open file %.*s for reading\n", (int)path.len, path.ptr);
             return (-1);
         }
 
+        oc_str8 test_string = OC_STR8("Hello from regular.txt");
         if(check_string(f, test_string))
         {
             oc_log_error("Check string failed\n");
@@ -56,7 +55,7 @@ int test_read()
         oc_str8 test_string = OC_STR8("Hello from directory/test.txt");
 
         FILE* f = fopen(path.ptr, "r");
-        if(ferror(f))
+        if(f == NULL || ferror(f))
         {
             oc_log_error("Can't open file %.*s for reading\n", (int)path.len, path.ptr);
             return (-1);
@@ -71,10 +70,19 @@ int test_read()
         fclose(f);
     }
 
+    {
+        FILE* f = fopen("does_not_exist.txt", "r");
+        if(f != NULL)
+        {
+            oc_log_error("Somehow opened a file that doesn't exist\n");
+            return (-1);
+        }
+    }
+
     return (0);
 }
 
-int test_write()
+int test_write(void)
 {
     oc_arena_scope scratch = oc_scratch_begin();
     oc_arena* arena = scratch.arena;
@@ -121,7 +129,56 @@ int test_write()
     return (0);
 }
 
-int test_seek()
+int test_error(void)
+{
+    {
+        FILE* f = fopen("regular.txt", "r");
+        oc_str8 test_string = OC_STR8("this shouldn't get written since the file is in read mode");
+        size_t written = fwrite(test_string.ptr, 1, test_string.len, f);
+        if(!ferror(f))
+        {
+            oc_log_error("File should be in error state");
+            return (-1);
+        }
+        if(written > 0)
+        {
+            oc_log_error("Wrote %d bytes but shouldn't have written any.", (int)written);
+            return (-1);
+        }
+
+        clearerr(f);
+        if(ferror(f))
+        {
+            oc_log_error("File error state should be clearec");
+            return (-1);
+        }
+    }
+
+    {
+        FILE* f = fopen("regular.txt", "w");
+
+        oc_str8 test_string = OC_STR8("Hello from regular.txt");
+        char buffer[256];
+        size_t n = fread(buffer, 1, sizeof(buffer), f);
+
+        if(!ferror(f))
+        {
+            oc_log_error("File should be in error state");
+            return (-1);
+        }
+
+        clearerr(f);
+        if(ferror(f))
+        {
+            oc_log_error("File error state should be clearec");
+            return (-1);
+        }
+    }
+
+    return (0);
+}
+
+int test_seek(void)
 {
     const char* filename = "temp_big_file.bin";
     FILE* f = fopen(filename, "w+");
@@ -213,14 +270,14 @@ int test_seek()
     return (0);
 }
 
-// int test_jail()
+// int test_jail(void)
 // {
 //     oc_log_info("test jail\n");
 
 //     FILE* fopen()
 // }
 
-// int test_jail()
+// int test_jail(void)
 // {
 //     oc_log_info("test jail\n");
 
@@ -381,6 +438,10 @@ ORCA_EXPORT i32 oc_on_test(void)
         return (-1);
     }
     if(test_write())
+    {
+        return (-1);
+    }
+    if(test_error())
     {
         return (-1);
     }
