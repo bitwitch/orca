@@ -149,7 +149,7 @@ int test_error(void)
         clearerr(f);
         if(ferror(f))
         {
-            oc_log_error("File error state should be clearec");
+            oc_log_error("File error state should be cleared");
             return (-1);
         }
     }
@@ -170,7 +170,7 @@ int test_error(void)
         clearerr(f);
         if(ferror(f))
         {
-            oc_log_error("File error state should be clearec");
+            oc_log_error("File error state should be cleared");
             return (-1);
         }
     }
@@ -270,166 +270,24 @@ int test_seek(void)
     return (0);
 }
 
-// int test_jail(void)
-// {
-//     oc_log_info("test jail\n");
+int test_jail(void)
+{
+    FILE* f = fopen("../out_of_data_dir.txt", "w");
+    if(f)
+    {
+        oc_log_error("Shouldn't be able to write to files outside the data dir");
+        return (-1);
+    }
 
-//     FILE* fopen()
-// }
+    f = fopen("../wasm/module.wasm", "r");
+    if(f)
+    {
+        oc_log_error("Shouldn't be able to read files outside the data dir");
+        return (-1);
+    }
 
-// int test_jail(void)
-// {
-//     oc_log_info("test jail\n");
-
-//     oc_file jail = oc_file_open(OC_STR8("./data/jail"), OC_FILE_ACCESS_READ, 0);
-//     if(oc_file_last_error(jail))
-//     {
-//         oc_log_error("Can't open jail directory\n");
-//         return (-1);
-//     }
-
-//     //-----------------------------------------------------------
-//     //NOTE: Check escapes
-//     //-----------------------------------------------------------
-//     oc_log_info("check potential escapes\n");
-
-//     //NOTE: escape with absolute path
-//     oc_file f = oc_file_open_at(jail, OC_STR8("/tmp"), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_ERR_NO_ENTRY)
-//     {
-//         oc_log_error("Escaped jail with absolute path /tmp\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //NOTE: escape with ..
-//     f = oc_file_open_at(jail, OC_STR8(".."), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_ERR_WALKOUT)
-//     {
-//         oc_log_error("Escaped jail with relative path ..\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //NOTE: escape with dir/../..
-//     f = oc_file_open_at(jail, OC_STR8("dir/../.."), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_ERR_WALKOUT)
-//     {
-//         oc_log_error("Escaped jail with relative path dir/../..\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //NOTE: escape with symlink to parent
-//     f = oc_file_open_at(jail, OC_STR8("/dir_escape"), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_ERR_WALKOUT)
-//     {
-//         oc_log_error("Escaped jail with symlink to parent\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //NOTE: escape to file with symlink to parent
-//     f = oc_file_open_at(jail, OC_STR8("/dir_escape/regular.txt"), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_ERR_WALKOUT)
-//     {
-//         oc_log_error("Escaped jail to regular.txt with symlink to parent\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //NOTE: escape with symlink to file
-//     f = oc_file_open_at(jail, OC_STR8("/file_escape"), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_ERR_WALKOUT)
-//     {
-//         oc_log_error("Escaped jail with symlink to file regular.txt\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //NOTE: escape with bad root handle
-//     oc_file wrong_handle = { 0 };
-//     f = oc_file_open_at(wrong_handle, OC_STR8("./data/regular.txt"), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) == OC_IO_OK)
-//     {
-//         oc_log_error("Escaped jail with nil root handle\n");
-//         return (-1);
-//     }
-//     if(oc_file_last_error(f) != OC_IO_ERR_HANDLE)
-//     {
-//         oc_log_error("OC_FILE_OPEN_RESTRICT with invalid root handle should return OC_IO_ERR_HANDLE\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //-----------------------------------------------------------
-//     //NOTE: empty path
-//     //-----------------------------------------------------------
-//     oc_log_info("check empty path\n");
-
-//     f = oc_file_open_at(jail, OC_STR8(""), OC_FILE_ACCESS_READ, 0);
-//     if(oc_file_last_error(f) != OC_IO_ERR_ARG)
-//     {
-//         oc_log_error("empty path should return OC_IO_ERR_ARG\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //-----------------------------------------------------------
-//     //NOTE: Check legitimates open
-//     //-----------------------------------------------------------
-//     oc_log_info("check legitimates open\n");
-
-//     //NOTE: regular file jail/test.txt
-//     f = oc_file_open_at(jail, OC_STR8("/test.txt"), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_OK)
-//     {
-//         oc_log_error("Can't open jail/test.txt\n");
-//         return (-1);
-//     }
-//     if(check_string(f, OC_STR8("Hello from jail/test.txt")))
-//     {
-//         oc_log_error("Check string failed\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //NOTE: valid file traversal to jail/test.txt
-//     f = oc_file_open_at(jail, OC_STR8("/dir/../test.txt"), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_OK)
-//     {
-//         oc_log_error("Can't open jail/dir/../test.txt\n");
-//         return (-1);
-//     }
-//     if(check_string(f, OC_STR8("Hello from jail/test.txt")))
-//     {
-//         oc_log_error("Check string failed\n");
-//         return (-1);
-//     }
-//     oc_file_close(f);
-
-//     //NOTE: re-open root directory
-//     f = oc_file_open_at(jail, OC_STR8("."), OC_FILE_ACCESS_READ, OC_FILE_OPEN_RESTRICT);
-//     if(oc_file_last_error(f) != OC_IO_OK)
-//     {
-//         oc_log_error("Can't open jail/.\n");
-//         return (-1);
-//     }
-//     {
-//         //NOTE: access regular file test.txt inside reopened root
-//         oc_file f2 = oc_file_open_at(f, OC_STR8("test.txt"), OC_FILE_ACCESS_READ, 0);
-
-//         if(check_string(f2, OC_STR8("Hello from jail/test.txt")))
-//         {
-//             oc_log_error("Check string failed\n");
-//             return (-1);
-//         }
-//         oc_file_close(f2);
-//     }
-//     oc_file_close(f);
-
-//     return (0);
-// }
+    return (0);
+}
 
 ORCA_EXPORT i32 oc_on_test(void)
 {
@@ -449,10 +307,10 @@ ORCA_EXPORT i32 oc_on_test(void)
     {
         return (-1);
     }
-    // if(test_jail())
-    // {
-    //     return (-1);
-    // }
+    if(test_jail())
+    {
+        return (-1);
+    }
 
     oc_log_info("OK\n");
 
