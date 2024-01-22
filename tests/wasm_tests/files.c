@@ -413,6 +413,52 @@ int test_getputs(void)
     return (0);
 }
 
+int test_printf_scanf(void)
+{
+    const oc_str8 filename = OC_STR8("printf_scanf_test.txt");
+    const oc_str8 format_string = OC_STR8("long int test: %llu\none more: %d%u");
+    const long long unsigned value_lld = -1;
+    const int value_d = 424242;
+    const unsigned value_u = 0xBEEFBEEF;
+
+    {
+        FILE* f = fopen(filename.ptr, "w");
+
+        if(fprintf(f, format_string.ptr, value_lld, value_d, value_u))
+        {
+            oc_log_error("Failed to fprintf");
+            return (-1);
+        }
+
+        fclose(f);
+    }
+
+    {
+        FILE* f = fopen(filename.ptr, "r");
+
+        long long unsigned read_value_lld;
+        int read_value_d;
+        unsigned read_value_u;
+
+        fscanf(f, format_string.ptr, &read_value_lld, &read_value_d, &read_value_u);
+        if(ferror(f))
+        {
+            oc_log_error("Caught error after fscanf");
+            return (-1);
+        }
+
+        if(read_value_lld != value_lld || read_value_d != value_d || read_value_u != value_u)
+        {
+            oc_log_error("Read incorrect values");
+            return (-1);
+        }
+
+        fclose(f);
+    }
+
+    return (0);
+}
+
 int test_getsetpos(void)
 {
     FILE* f = fopen("getsetpos_test.txt", "w+");
@@ -492,6 +538,10 @@ ORCA_EXPORT i32 oc_on_test(void)
         return (-1);
     }
     if(test_getputs())
+    {
+        return (-1);
+    }
+    if(test_printf_scanf())
     {
         return (-1);
     }
