@@ -44,6 +44,7 @@ typedef union _G_fpos64_t
     double __align;
 } fpos_t;
 
+char* fgets(char* restrict str, int num, FILE* restrict stream );
 FILE* fopen(const char* restrict name, const char* restrict type);
 int fclose(FILE* stream);
 int feof(FILE* stream);
@@ -52,6 +53,7 @@ int fflush(FILE* stream);
 int fgetc(FILE* stream);
 int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
 int fputc(int character, FILE* stream);
+int fputs(const char* restrict str, FILE* restrict stream );
 int fseek(FILE* stream, long int offset, int origin);
 int fsetpos(FILE* restrict stream, const fpos_t* pos);
 long int ftell(FILE* stream);

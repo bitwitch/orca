@@ -378,6 +378,41 @@ int test_getputc(void)
     return (0);
 }
 
+int test_getputs(void)
+{
+    const oc_str8 filename = OC_STR8("getputs_test.txt");
+    const oc_str8 test_file_contents = OC_STR8("hello from getputs_test\n");
+
+    {
+        FILE* f = fopen("getputs_test.txt", "w");
+        if(fputs(test_file_contents.ptr, f))
+        {
+            oc_log_error("Failed to fputs");
+            return (-1);
+        }
+        fclose(f);
+    }
+
+    {
+        FILE* f = fopen("getputs_test.txt", "r");
+        char buffer[256];
+        if(fgets(buffer, sizeof(buffer), f) == NULL)
+        {
+            oc_log_error("Failed to fgets");
+            return (-1);
+        }
+        oc_str8 read_contents = OC_STR8(buffer);
+        if(oc_str8_cmp(test_file_contents, read_contents))
+        {
+            oc_log_error("Didn't read expected output from file, got: %s", buffer);
+            return (-1);
+        }
+        fclose(f);
+    }
+
+    return (0);
+}
+
 int test_getsetpos(void)
 {
     FILE* f = fopen("getsetpos_test.txt", "w+");
@@ -453,6 +488,10 @@ ORCA_EXPORT i32 oc_on_test(void)
         return (-1);
     }
     if(test_getputc())
+    {
+        return (-1);
+    }
+    if(test_getputs())
     {
         return (-1);
     }
