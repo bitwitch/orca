@@ -1,16 +1,25 @@
 #!/bin/bash
 
-LIBDIR=../../build/bin
-SRCDIR=../../src
+set -e
 
-INCLUDES="-I$SRCDIR -I$SRCDIR/util -I$SRCDIR/platform -I$SRCDIR/app"
-LIBS="-L$LIBDIR -lorca"
-FLAGS="-mmacos-version-min=10.15.4 -DOC_DEBUG -DLOG_COMPILE_DEBUG"
+ORCA_DIR=../..
+
+wasmFlags="--target=wasm32 \
+  -mbulk-memory \
+  -g -O2 \
+  -D__ORCA__ \
+  -Wl,--no-entry \
+  -Wl,--export-dynamic \
+  --sysroot $ORCA_DIR/build/orca-libc \
+  -I $ORCA_DIR/src \
+  -I $ORCA_DIR/src/ext"
 
 if [ ! \( -e bin \) ] ; then
 	mkdir ./bin
 fi
 
+clang $wasmFlags -L $ORCA_DIR/build/bin -lorca_wasm -o files.wasm files.c
 
-clang -g $FLAGS $LIBS $INCLUDES -o ./bin/test_files main.c
-install_name_tool -add_rpath "@executable_path/../../../build/bin" ./bin/test_files
+orca bundle --orca-dir $ORCA_DIR --name Tests --resource-dir data files.wasm
+
+./Tests.app/Contents/macOS/orca_runtime --test=files.wasm
