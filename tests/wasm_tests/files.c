@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <errno.h>
 
+const oc_str8 REGULAR_TXT_CONTENTS = OC_STR8("Hello from regular.txt");
+
 int check_string(FILE* f, oc_str8 test_string)
 {
     char buffer[256];
@@ -40,8 +42,7 @@ int test_read(void)
             return (-1);
         }
 
-        oc_str8 test_string = OC_STR8("Hello from regular.txt");
-        if(check_string(f, test_string))
+        if(check_string(f, REGULAR_TXT_CONTENTS))
         {
             oc_log_error("Check string failed\n");
             return (-1);
@@ -155,9 +156,8 @@ int test_error(void)
     }
 
     {
-        FILE* f = fopen("regular.txt", "w");
+        FILE* f = fopen("error_test.txt", "w");
 
-        oc_str8 test_string = OC_STR8("Hello from regular.txt");
         char buffer[256];
         size_t n = fread(buffer, 1, sizeof(buffer), f);
 
@@ -289,6 +289,151 @@ int test_jail(void)
     return (0);
 }
 
+int test_eof(void)
+{
+    FILE* f = fopen("regular.txt", "r");
+    char buffer[1024];
+    size_t num_read = fread(buffer, 1, sizeof(buffer), f);
+    if(num_read == 0)
+    {
+        oc_log_error("Should have read at least some data");
+        return (-1);
+    }
+
+    if(!feof(f))
+    {
+        oc_log_error("Should be at end of file by now");
+        return (-1);
+    }
+
+    char data = 0;
+    num_read = fread(&data, 1, 1, f);
+    if(num_read != 0)
+    {
+        oc_log_error("Should be at end of file - no data should be read");
+        return (-1);
+    }
+
+    return (0);
+}
+
+int test_getputc(void)
+{
+    const oc_str8 filename = OC_STR8("putc_test.txt");
+    const oc_str8 test_file_contents = OC_STR8("The quick brown fox jumped over the lazy dog!@#$%^&*()\n");
+
+    {
+        FILE* f = fopen(filename.ptr, "w");
+        for(int i = 0; i < test_file_contents.len; ++i)
+        {
+            int c = test_file_contents.ptr[i];
+            if(putc(c, f) != c)
+            {
+                oc_log_error("Failed to put character to file");
+                return (-1);
+            }
+            if(ferror(f))
+            {
+                oc_log_error("Caught error putting character to file");
+                return (-1);
+            }
+        }
+        fclose(f);
+    }
+
+    {
+        FILE* f = fopen(filename.ptr, "r");
+        char buffer[256];
+        int total_read = 0;
+        for(int i = 0; i < sizeof(buffer) && !feof(f); ++i)
+        {
+            int character = getc(f);
+            if(character == EOF)
+            {
+                break;
+            }
+            if(ferror(f))
+            {
+                oc_log_error("Failed to read character");
+                return (-1);
+            }
+            buffer[i] = (char)character;
+
+            total_read = i + 1;
+        }
+
+        if(ferror(f) && !feof(f))
+        {
+            oc_log_error("File in error state");
+            return (-1);
+        }
+
+        if(oc_str8_cmp(test_file_contents, oc_str8_from_buffer(total_read, buffer)))
+        {
+            oc_log_error("Failed to read correct file contents, got: '%.*s'", (int)total_read, buffer);
+            return (-1);
+        }
+    }
+
+    return (0);
+}
+
+int test_getsetpos(void)
+{
+    FILE* f = fopen("getsetpos_test.txt", "w+");
+    if(f == NULL)
+    {
+        oc_log_error("failed to open getsetpos_test.txt");
+        return (-1);
+    }
+
+    if(fputc('A', f) != 'A')
+    {
+        oc_log_error("failed to fputc");
+        return (-1);
+    }
+
+    fpos_t pos;
+    if(fgetpos(f, &pos))
+    {
+        oc_log_error("fgetpos failed");
+        return (-1);
+    }
+
+    fputc('B', f);
+
+    if(fsetpos(f, &pos))
+    {
+        oc_log_error("fsetpos failed");
+        return (-1);
+    }
+
+    for(int i = 'C'; i <= 'Z'; ++i)
+    {
+        fputc((char)i, f);
+    }
+
+    if(fsetpos(f, &pos))
+    {
+        oc_log_error("fsetpos failed");
+        return (-1);
+    }
+
+    int character = fgetc(f);
+    if(character == EOF)
+    {
+        oc_log_error("Got unexpected EOF");
+        return (-1);
+    }
+    if(character != 'C')
+    {
+        oc_log_error("Failed to get 'C', got '%c'", (char)character);
+        return (-1);
+    }
+
+    return (0);
+}
+
 ORCA_EXPORT i32 oc_on_test(void)
 {
     if(test_read())
@@ -303,7 +448,19 @@ ORCA_EXPORT i32 oc_on_test(void)
     {
         return (-1);
     }
+    if(test_eof())
+    {
+        return (-1);
+    }
+    if(test_getputc())
+    {
+        return (-1);
+    }
     if(test_seek())
+    {
+        return (-1);
+    }
+    if(test_getsetpos())
     {
         return (-1);
     }
