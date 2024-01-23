@@ -17,7 +17,6 @@ set STDLIB_DIR=%ORCA_DIR%/build/orca-libc
 
 :: common flags to build wasm modules
 set wasmFlags=--target=wasm32^
-       --no-standard-libraries ^
        -mbulk-memory ^
        -g -O2 ^
        -D__ORCA__ ^
@@ -28,7 +27,7 @@ set wasmFlags=--target=wasm32^
        -I%ORCA_DIR%/src/ext
 
 :: build sample as wasm module and link it with the orca module
-clang %wasmFlags% -L %ORCA_DIR%/build/bin -lorca_wasm -lc -o module.wasm src/main.c
+clang %wasmFlags% -L %ORCA_DIR%/build/bin -lorca_wasm -o module.wasm src/main.c
 IF %ERRORLEVEL% NEQ 0 EXIT /B %ERRORLEVEL%
 
 :: create app directory and copy files into it
