@@ -296,6 +296,33 @@ int test_ftell(void)
     return (0);
 }
 
+int test_rewind(void)
+{
+    FILE* f = fopen("regular.txt", "r");
+    int err = fseek(f, 0, SEEK_END);
+    if(err)
+    {
+        oc_log_error("Failed to SEEK_END\n");
+        return (-1);
+    }
+
+    rewind(f);
+    if(ferror(f))
+    {
+        oc_log_error("Caught error running rewind");
+        return (-1);
+    }
+
+    int pos = ftell(f);
+    if(pos != 0)
+    {
+        oc_log_error("rewind didn't work");
+        return (-1);
+    }
+
+    return (0);
+}
+
 int test_jail(void)
 {
     FILE* f = fopen("../out_of_data_dir.txt", "w");
@@ -581,6 +608,10 @@ ORCA_EXPORT i32 oc_on_test(void)
     {
         return (-1);
     }
+    if(test_getsetpos())
+    {
+        return (-1);
+    }
     if(test_seek())
     {
         return (-1);
@@ -589,7 +620,7 @@ ORCA_EXPORT i32 oc_on_test(void)
     {
         return (-1);
     }
-    if(test_getsetpos())
+    if(test_rewind())
     {
         return (-1);
     }

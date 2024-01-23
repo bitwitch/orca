@@ -60,6 +60,7 @@ long int ftell(FILE* stream);
 size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
 size_t fwrite(const void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
 void clearerr(FILE *f);
+void rewind(FILE* stream);
 
 #define putc fputc
 #define getc fgetc
