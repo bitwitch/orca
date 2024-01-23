@@ -416,15 +416,20 @@ int test_getputs(void)
 int test_printf_scanf(void)
 {
     const oc_str8 filename = OC_STR8("printf_scanf_test.txt");
-    const oc_str8 format_string = OC_STR8("long int test: %llu\none more: %d%u");
+    const oc_str8 format_string = OC_STR8("long int test: %llu\none more: %d %u");
     const long long unsigned value_lld = -1;
     const int value_d = 424242;
     const unsigned value_u = 0xBEEFBEEF;
 
     {
         FILE* f = fopen(filename.ptr, "w");
+        if(f == NULL)
+        {
+            oc_log_error("Failed to open file");
+            return (-1);
+        }
 
-        if(fprintf(f, format_string.ptr, value_lld, value_d, value_u))
+        if(fprintf(f, format_string.ptr, value_lld, value_d, value_u) < 0)
         {
             oc_log_error("Failed to fprintf");
             return (-1);
@@ -435,6 +440,11 @@ int test_printf_scanf(void)
 
     {
         FILE* f = fopen(filename.ptr, "r");
+        if(f == NULL)
+        {
+            oc_log_error("Failed to open file");
+            return (-1);
+        }
 
         long long unsigned read_value_lld;
         int read_value_d;
@@ -449,7 +459,7 @@ int test_printf_scanf(void)
 
         if(read_value_lld != value_lld || read_value_d != value_d || read_value_u != value_u)
         {
-            oc_log_error("Read incorrect values");
+            oc_log_error("Read incorrect values: %lld, %d, %u", read_value_lld, read_value_d, read_value_u);
             return (-1);
         }
 
