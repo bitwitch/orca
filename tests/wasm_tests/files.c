@@ -270,6 +270,32 @@ int test_seek(void)
     return (0);
 }
 
+int test_ftell(void)
+{
+    FILE* f = fopen("regular.txt", "r");
+    int err = fseek(f, 0, SEEK_END);
+    if(err)
+    {
+        oc_log_error("Failed to SEEK_END\n");
+        return (-1);
+    }
+
+    int pos = ftell(f);
+    if(pos <= 0)
+    {
+        oc_log_error("Failed to ftell");
+        return (-1);
+    }
+
+    if(ferror(f))
+    {
+        oc_log_error("Caught error running ftell");
+        return (-1);
+    }
+
+    return (0);
+}
+
 int test_jail(void)
 {
     FILE* f = fopen("../out_of_data_dir.txt", "w");
@@ -556,6 +582,10 @@ ORCA_EXPORT i32 oc_on_test(void)
         return (-1);
     }
     if(test_seek())
+    {
+        return (-1);
+    }
+    if(test_ftell())
     {
         return (-1);
     }
