@@ -46,6 +46,7 @@ typedef union _G_fpos64_t
 
 char* fgets(char* restrict str, int num, FILE* restrict stream );
 FILE* fopen(const char* restrict name, const char* restrict type);
+FILE* freopen(const char* restrict filename, const char* restrict mode, FILE* restrict f);
 int fclose(FILE* stream);
 int feof(FILE* stream);
 int ferror(FILE* stream);

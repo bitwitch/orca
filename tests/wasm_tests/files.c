@@ -178,170 +178,6 @@ int test_error(void)
     return (0);
 }
 
-int test_seek(void)
-{
-    const char* filename = "temp_big_file.bin";
-    FILE* f = fopen(filename, "w+");
-    if(ferror(f))
-    {
-        return (-1);
-    }
-
-    // should only write 256 bytes of zeroes to the file since we're resetting the head position every time
-    const unsigned char MAX_LOOPS = 0xFF;
-    for(unsigned char i = 0; i < MAX_LOOPS; ++i)
-    {
-        unsigned char empty_data[16];
-        memset(empty_data, i + 1, sizeof(empty_data));
-
-        if(i > 0)
-        {
-            int err = fseek(f, -((long int)sizeof(empty_data)), SEEK_CUR);
-            if(err)
-            {
-                oc_log_error("Failed to SEEK_CUR\n");
-                return (-1);
-            }
-        }
-
-        size_t n = fwrite(empty_data, 1, sizeof(empty_data), f);
-        if(ferror(f))
-        {
-            oc_log_error("Caught error writing to %s\n", filename);
-            return (-1);
-        }
-        if(n != sizeof(empty_data))
-        {
-            oc_log_error("Failed to write all bytes to %s\n", filename);
-            return (-1);
-        }
-    }
-
-    fflush(f);
-    if(ferror(f))
-    {
-        oc_log_error("fflush failed: %d\n", errno);
-        return (-1);
-    }
-
-    {
-        int err = fseek(f, 0, SEEK_SET);
-        if(err)
-        {
-            oc_log_error("Failed to SEEK_SET\n");
-            return (-1);
-        }
-
-        unsigned char written_data[16];
-        size_t n = fread(&written_data, 1, sizeof(written_data), f);
-        if(ferror(f))
-        {
-            oc_log_error("Caught error reading data: %d\n", errno);
-            return (-1);
-        }
-
-        if(n != sizeof(written_data))
-        {
-            oc_log_error("Failed to read enough data\n");
-            return (-1);
-        }
-
-        for(i32 i = 0; i < sizeof(written_data) / sizeof(*written_data); ++i)
-        {
-            if(written_data[i] != MAX_LOOPS)
-            {
-                oc_log_error("Read %d but expected %d\n", written_data[i], MAX_LOOPS);
-                return (-1);
-            }
-        }
-    }
-
-    {
-        int err = fseek(f, 0, SEEK_END);
-        if(err)
-        {
-            oc_log_error("Failed to SEEK_END\n");
-            return (-1);
-        }
-    }
-
-    fclose(f);
-
-    return (0);
-}
-
-int test_ftell(void)
-{
-    FILE* f = fopen("regular.txt", "r");
-    int err = fseek(f, 0, SEEK_END);
-    if(err)
-    {
-        oc_log_error("Failed to SEEK_END\n");
-        return (-1);
-    }
-
-    int pos = ftell(f);
-    if(pos <= 0)
-    {
-        oc_log_error("Failed to ftell");
-        return (-1);
-    }
-
-    if(ferror(f))
-    {
-        oc_log_error("Caught error running ftell");
-        return (-1);
-    }
-
-    return (0);
-}
-
-int test_rewind(void)
-{
-    FILE* f = fopen("regular.txt", "r");
-    int err = fseek(f, 0, SEEK_END);
-    if(err)
-    {
-        oc_log_error("Failed to SEEK_END\n");
-        return (-1);
-    }
-
-    rewind(f);
-    if(ferror(f))
-    {
-        oc_log_error("Caught error running rewind");
-        return (-1);
-    }
-
-    int pos = ftell(f);
-    if(pos != 0)
-    {
-        oc_log_error("rewind didn't work");
-        return (-1);
-    }
-
-    return (0);
-}
-
-int test_jail(void)
-{
-    FILE* f = fopen("../out_of_data_dir.txt", "w");
-    if(f)
-    {
-        oc_log_error("Shouldn't be able to write to files outside the data dir");
-        return (-1);
-    }
-
-    f = fopen("../wasm/module.wasm", "r");
-    if(f)
-    {
-        oc_log_error("Shouldn't be able to read files outside the data dir");
-        return (-1);
-    }
-
-    return (0);
-}
-
 int test_eof(void)
 {
     FILE* f = fopen("regular.txt", "r");
@@ -578,6 +414,211 @@ int test_getsetpos(void)
     return (0);
 }
 
+int test_seek(void)
+{
+    const char* filename = "temp_big_file.bin";
+    FILE* f = fopen(filename, "w+");
+    if(ferror(f))
+    {
+        return (-1);
+    }
+
+    // should only write 256 bytes of zeroes to the file since we're resetting the head position every time
+    const unsigned char MAX_LOOPS = 0xFF;
+    for(unsigned char i = 0; i < MAX_LOOPS; ++i)
+    {
+        unsigned char empty_data[16];
+        memset(empty_data, i + 1, sizeof(empty_data));
+
+        if(i > 0)
+        {
+            int err = fseek(f, -((long int)sizeof(empty_data)), SEEK_CUR);
+            if(err)
+            {
+                oc_log_error("Failed to SEEK_CUR\n");
+                return (-1);
+            }
+        }
+
+        size_t n = fwrite(empty_data, 1, sizeof(empty_data), f);
+        if(ferror(f))
+        {
+            oc_log_error("Caught error writing to %s\n", filename);
+            return (-1);
+        }
+        if(n != sizeof(empty_data))
+        {
+            oc_log_error("Failed to write all bytes to %s\n", filename);
+            return (-1);
+        }
+    }
+
+    fflush(f);
+    if(ferror(f))
+    {
+        oc_log_error("fflush failed: %d\n", errno);
+        return (-1);
+    }
+
+    {
+        int err = fseek(f, 0, SEEK_SET);
+        if(err)
+        {
+            oc_log_error("Failed to SEEK_SET\n");
+            return (-1);
+        }
+
+        unsigned char written_data[16];
+        size_t n = fread(&written_data, 1, sizeof(written_data), f);
+        if(ferror(f))
+        {
+            oc_log_error("Caught error reading data: %d\n", errno);
+            return (-1);
+        }
+
+        if(n != sizeof(written_data))
+        {
+            oc_log_error("Failed to read enough data\n");
+            return (-1);
+        }
+
+        for(i32 i = 0; i < sizeof(written_data) / sizeof(*written_data); ++i)
+        {
+            if(written_data[i] != MAX_LOOPS)
+            {
+                oc_log_error("Read %d but expected %d\n", written_data[i], MAX_LOOPS);
+                return (-1);
+            }
+        }
+    }
+
+    {
+        int err = fseek(f, 0, SEEK_END);
+        if(err)
+        {
+            oc_log_error("Failed to SEEK_END\n");
+            return (-1);
+        }
+    }
+
+    fclose(f);
+
+    return (0);
+}
+
+int test_ftell(void)
+{
+    FILE* f = fopen("regular.txt", "r");
+    int err = fseek(f, 0, SEEK_END);
+    if(err)
+    {
+        oc_log_error("Failed to SEEK_END\n");
+        return (-1);
+    }
+
+    int pos = ftell(f);
+    if(pos <= 0)
+    {
+        oc_log_error("Failed to ftell");
+        return (-1);
+    }
+
+    if(ferror(f))
+    {
+        oc_log_error("Caught error running ftell");
+        return (-1);
+    }
+
+    return (0);
+}
+
+int test_rewind(void)
+{
+    FILE* f = fopen("regular.txt", "r");
+    int err = fseek(f, 0, SEEK_END);
+    if(err)
+    {
+        oc_log_error("Failed to SEEK_END\n");
+        return (-1);
+    }
+
+    rewind(f);
+    if(ferror(f))
+    {
+        oc_log_error("Caught error running rewind");
+        return (-1);
+    }
+
+    int pos = ftell(f);
+    if(pos != 0)
+    {
+        oc_log_error("rewind didn't work");
+        return (-1);
+    }
+
+    return (0);
+}
+
+int test_freopen(void)
+{
+    {
+        oc_str8 filename = OC_STR8("freopen_test1.txt");
+        oc_str8 test_string = OC_STR8("hello world from a file");
+
+        FILE* f = fopen(filename.ptr, "w");
+        fprintf(f, "%s", test_string.ptr);
+
+        if(ferror(f))
+        {
+            oc_log_error("failed writing to file");
+            return (1);
+        }
+
+        if(freopen(filename.ptr, "r", f) == NULL)
+        {
+            oc_log_error("freopen failed with err: %d, %s", errno, strerror(errno));
+            return (1);
+        }
+
+        if(check_string(f, test_string))
+        {
+            return (1);
+        }
+        fclose(f);
+    }
+
+    {
+        oc_str8 filename = OC_STR8("freopen_test2.txt");
+        FILE* f = fopen(filename.ptr, "w");
+        if(freopen(NULL, "r", f))
+        {
+            oc_log_error("orca shouldn't support reopening files without specifying the filename");
+            return (1);
+        }
+    }
+
+    return (0);
+}
+
+int test_jail(void)
+{
+    FILE* f = fopen("../out_of_data_dir.txt", "w");
+    if(f)
+    {
+        oc_log_error("Shouldn't be able to write to files outside the data dir");
+        return (-1);
+    }
+
+    f = fopen("../wasm/module.wasm", "r");
+    if(f)
+    {
+        oc_log_error("Shouldn't be able to read files outside the data dir");
+        return (-1);
+    }
+
+    return (0);
+}
+
 ORCA_EXPORT i32 oc_on_test(void)
 {
     if(test_read())
@@ -621,6 +662,10 @@ ORCA_EXPORT i32 oc_on_test(void)
         return (-1);
     }
     if(test_rewind())
+    {
+        return (-1);
+    }
+    if(test_freopen())
     {
         return (-1);
     }

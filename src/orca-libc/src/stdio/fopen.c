@@ -193,39 +193,17 @@ static int file_close_shim(FILE* stream)
 	return 0;
 }
 
-FILE *fopen(const char *restrict filename, const char *restrict mode)
+static oc_file fopen_orca_file(const char* restrict filename, const char* restrict mode)
 {
-	// FILE *f;
-	// int fd;
-	// int flags;
-
 	/* Check for valid initial mode character */
 	if (!strchr("rwa", *mode)) {
 		errno = EINVAL;
-		return NULL;
+		return oc_file_nil();
 	}
 
 	/* Compute the flags to pass to open() */
 	int flags = __fmodeflags(mode);
 
-// int __fmodeflags(const char *mode)
-// {
-// 	int flags;
-// 	if (strchr(mode, '+')) flags = O_RDWR;
-// 	else if (*mode == 'r') flags = O_RDONLY;
-// 	else flags = O_WRONLY;
-// 	if (strchr(mode, 'x')) flags |= O_EXCL;
-// 	if (strchr(mode, 'e')) flags |= O_CLOEXEC;
-// 	if (*mode != 'r') flags |= O_CREAT;
-// 	if (*mode == 'w') flags |= O_TRUNC;
-// 	if (*mode == 'a') flags |= O_APPEND;
-// 	return flags;
-// }
-
-	
-	// fd = __wasilibc_open_nomode(filename, flags);
-
-	// (ORCA): 
 	oc_file_access orca_rights = 0;
 	if (flags & O_RDWR)
 	{
@@ -261,25 +239,15 @@ FILE *fopen(const char *restrict filename, const char *restrict mode)
 	{
 		errno = oc_io_err_to_errno(error);
 		oc_file_close(file);
-		return NULL;
+		return oc_file_nil();
 	}
 
-	// ORCA: original musl code called __fdopen to be resused for tmpfile(), but since we don't support that
-	//       we can just inline the FILE struct setup here.
+	return file;
+}
 
-	FILE *f;
-// #ifdef __wasilibc_unmodified_upstream // WASI has no syscall
-// 	struct winsize wsz;
-// #endif
-
-	/* Check for valid initial mode character */
-	if (!strchr("rwa", *mode)) {
-		errno = EINVAL;
-		return 0;
-	}
-
-	/* Allocate FILE+buffer or fail */
-	if (!(f=malloc(sizeof *f + UNGET + BUFSIZ))) return 0;
+static FILE* fopen_struct_setup(FILE* f, oc_file file, const char* restrict mode)
+{
+	int flags = __fmodeflags(mode);
 
 	/* Zero-fill only the struct, not the buffer */
 	memset(f, 0, sizeof *f);
@@ -287,26 +255,8 @@ FILE *fopen(const char *restrict filename, const char *restrict mode)
 	/* Impose mode restrictions */
 	if (!strchr(mode, '+')) f->flags = (*mode == 'r') ? F_NOWR : F_NORD;
 
-	/* Apply close-on-exec flag */
-// #ifdef __wasilibc_unmodified_upstream // WASI has no syscall
-// 	if (strchr(mode, 'e')) __syscall(SYS_fcntl, fd, F_SETFD, FD_CLOEXEC);
-// #else
-	// if (strchr(mode, 'e')) fcntl(fd, F_SETFD, FD_CLOEXEC);
-// #endif
-
 	/* Set append mode on fd if opened for append */
 	if (*mode == 'a') {
-// #ifdef __wasilibc_unmodified_upstream // WASI has no syscall
-// 		int flags = __syscall(SYS_fcntl, fd, F_GETFL);
-// #else
-		// int flags = fcntl(fd, F_GETFL);
-// #endif
-		// if (!(flags & O_APPEND))
-// #ifdef __wasilibc_unmodified_upstream // WASI has no syscall
-// 			__syscall(SYS_fcntl, fd, F_SETFL, flags | O_APPEND);
-// #else
-			// fcntl(fd, F_SETFL, flags | O_APPEND);
-// #endif
 		f->flags |= F_APP;
 	}
 
@@ -316,12 +266,6 @@ FILE *fopen(const char *restrict filename, const char *restrict mode)
 
 	/* Activate line buffered mode for terminals */
 	f->lbf = EOF;
-// #ifdef __wasilibc_unmodified_upstream // WASI has no syscall
-// 	if (!(f->flags & F_NOWR) && !__syscall(SYS_ioctl, fd, TIOCGWINSZ, &wsz))
-// #else
-	// if (!(f->flags & F_NOWR) && __isatty(fd))
-// #endif
-		// f->lbf = '\n';
 
 	/* Initialize op ptrs. No problem if some are unneeded. */
 	f->read = file_read_shim;
@@ -335,17 +279,54 @@ FILE *fopen(const char *restrict filename, const char *restrict mode)
 
 	/* Add new FILE to open file list */
 	return __ofl_add(f);
+}
 
-	// f = __fdopen(file.h, mode);
-	// if (f) return f;
+FILE* fopen(const char* restrict filename, const char* restrict mode)
+{
+	oc_file file = fopen_orca_file(filename, mode);
+	if (oc_file_is_nil(file))
+	{
+		return NULL;
+	}
 
-	// oc_file_close(file);
-	// return NULL;
+	FILE* f;
+	if (!(f=malloc(sizeof *f + UNGET + BUFSIZ))) return NULL;
+	return fopen_struct_setup(f, file, mode);
+}
 
-	// close(fd);
-	// (ORCA)
 
-	// return 0;
+FILE* freopen(const char* restrict filename, const char* restrict mode, FILE* restrict f)
+{
+	if (filename == NULL) {
+		fclose(f);
+		return NULL;
+	}
+
+	FLOCK(f);
+
+	fflush(f);
+	f->close(f);
+
+	oc_file file = fopen_orca_file(filename, mode);
+	if (oc_file_is_nil(file))
+	{
+		free(f);
+		return NULL;
+	}
+
+	f->orca_file = file.h;
+
+	int flags = __fmodeflags(mode);
+	if (*mode == 'a') {
+		flags |= F_APP;
+	}
+
+	f->flags = flags;
+	FUNLOCK(f);
+
+	FUNLOCK(f);
+	return f;
 }
 
 weak_alias(fopen, fopen64);
+weak_alias(freopen, freopen64);
