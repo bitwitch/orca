@@ -729,6 +729,31 @@ int test_setbuf(void)
     return (0);
 }
 
+int test_ungetc(void)
+{
+    oc_str8 path = OC_STR8("regular.txt");
+    FILE* f = fopen(path.ptr, "r");
+
+    // Making some assumptions here that the first character is 'H' and the second character is 'e'
+    int c1 = fgetc(f);
+    int c2 = 'Y';
+
+    if(ungetc(c2, f) == EOF)
+    {
+        oc_log_error("failed to ungetc");
+        return (-1);
+    }
+
+    int c3 = fgetc(f);
+    if(c3 != c2)
+    {
+        oc_log_error("expected to get char %c but got %c", c2, c3);
+        return (-1);
+    }
+
+    return (0);
+}
+
 int test_jail(void)
 {
     FILE* f = fopen("../out_of_data_dir.txt", "w");
@@ -799,6 +824,10 @@ ORCA_EXPORT i32 oc_on_test(void)
         return (-1);
     }
     if(test_setbuf())
+    {
+        return (-1);
+    }
+    if(test_ungetc())
     {
         return (-1);
     }

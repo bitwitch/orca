@@ -57,13 +57,14 @@ int fputc(int character, FILE* stream);
 int fputs(const char* restrict str, FILE* restrict stream );
 int fseek(FILE* stream, long int offset, int origin);
 int fsetpos(FILE* restrict stream, const fpos_t* pos);
+int setvbuf(FILE* restrict f, char* restrict buf, int type, size_t size);
+int ungetc(int c, FILE* f);
 long int ftell(FILE* stream);
 size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
 size_t fwrite(const void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
 void clearerr(FILE *f);
 void rewind(FILE* stream);
 void setbuf(FILE* restrict f, char* restrict buf);
-int setvbuf(FILE* restrict f, char* restrict buf, int type, size_t size);
 
 #define putc fputc
 #define getc fgetc
