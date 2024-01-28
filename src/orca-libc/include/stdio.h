@@ -81,9 +81,6 @@ int vsscanf(const char* __restrict, const char* __restrict, __isoc_va_list);
 int fscanf(FILE* restrict f, const char* restrict fmt, ...);
 int vfscanf(FILE* restrict f, const char* restrict fmt, va_list ap);
 
-int asprintf(char**, const char*, ...);
-int vasprintf(char**, const char*, __isoc_va_list);
-
 #ifdef __cplusplus
 }
 #endif
