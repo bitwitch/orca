@@ -264,9 +264,6 @@ static FILE* fopen_struct_setup(FILE* f, oc_file file, const char* restrict mode
 	f->buf = (unsigned char *)f + sizeof *f + UNGET;
 	f->buf_size = BUFSIZ;
 
-	/* Activate line buffered mode for terminals */
-	f->lbf = EOF;
-
 	/* Initialize op ptrs. No problem if some are unneeded. */
 	f->read = file_read_shim;
 	f->write = file_write_shim;
