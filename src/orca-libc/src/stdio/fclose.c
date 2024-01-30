@@ -31,8 +31,11 @@ int fclose(FILE *f)
 	if (*head == f) *head = f->next;
 	__ofl_unlock();
 
-	free(f->getln_buf);
-	free(f);
+	if (f != stdout && f != stderr && f != stdin)
+	{
+		free(f->getln_buf);
+		free(f);
+	}
 
 	return r;
 }
