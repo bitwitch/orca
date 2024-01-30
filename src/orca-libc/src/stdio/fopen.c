@@ -71,15 +71,10 @@ static size_t file_read_shim(FILE* stream, unsigned char* buffer, size_t size)
 {
 	oc_file file = { .h = stream->orca_file };
 
-	// if (f->buf_size > 0)
-	// {
-
-	// }
-
-	// In the wasilibc __stdio_read(), there is this behavior that writes the last character of len
+	// In the wasilibc __stdout_read(), there is this behavior that writes the last character of len
 	// to the file buffer, and to the output stream as well. This code preserves that behavior as
 	// it is needed by __uflow(). See original source at:
-	// https://github.com/WebAssembly/wasi-libc/blob/main/libc-top-half/musl/src/stdio/__stdio_read.c
+	// https://github.com/WebAssembly/wasi-libc/blob/main/libc-top-half/musl/src/stdout/__stdout_read.c
 	char* buffers[2] = { (char*)buffer, (char*)stream->buf };
 	u64 lengths[2] = { size - !!stream->buf_size, stream->buf_size };
 	u64 read_bytes[2] = {0};
@@ -193,6 +188,31 @@ static int file_close_shim(FILE* stream)
 	return 0;
 }
 
+size_t __file_read_err_shim(FILE* stream, unsigned char* buffer, size_t size)
+{
+	stream->flags |= F_ERR;
+	errno = ENOTSUP;
+	return 0;
+}
+size_t __file_write_err_shim(FILE* stream, const unsigned char* buffer, size_t size)
+{
+	stream->flags |= F_ERR;
+	errno = ENOTSUP;
+	return 0;
+}
+off_t __file_seek_err_shim(FILE* stream, off_t offset, int origin)
+{
+	stream->flags |= F_ERR;
+	errno = ENOTSUP;
+	return 0;
+}
+int __file_close_err_shim(FILE* stream)
+{
+	stream->flags |= F_ERR;
+	errno = ENOTSUP;
+	return 0;
+}
+
 static oc_file fopen_orca_file(const char* restrict filename, const char* restrict mode)
 {
 	/* Check for valid initial mode character */
@@ -291,6 +311,9 @@ FILE* fopen(const char* restrict filename, const char* restrict mode)
 	return fopen_struct_setup(f, file, mode);
 }
 
+static unsigned char stdout_buf[BUFSIZ+UNGET];
+static unsigned char stderr_buf[BUFSIZ+UNGET];
+static unsigned char stdin_buf[BUFSIZ+UNGET];
 
 FILE* freopen(const char* restrict filename, const char* restrict mode, FILE* restrict f)
 {
@@ -319,7 +342,34 @@ FILE* freopen(const char* restrict filename, const char* restrict mode, FILE* re
 	}
 
 	f->flags = flags;
-	FUNLOCK(f);
+
+	if (f == stdout || f == stderr || f == stdin)
+	{
+		if (f == stdout)
+		{
+			f->buf = stdout_buf;
+		} 
+		else if (f == stderr) 
+		{
+			f->buf = stderr_buf;
+		}
+		else if (f == stdin)
+		{
+			f->buf = stdin_buf;
+		}
+		f->buf_size = BUFSIZ;
+
+		f->rpos = 0;
+		f->rend = 0;
+		f->wbase = 0;
+		f->wpos = 0;
+		f->wend = 0;
+
+		f->read = file_read_shim;
+		f->write = file_write_shim;
+		f->seek = file_seek_shim;
+		f->close = file_close_shim;
+	}
 
 	FUNLOCK(f);
 	return f;

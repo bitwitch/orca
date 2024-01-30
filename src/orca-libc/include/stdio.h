@@ -44,6 +44,14 @@ typedef union _G_fpos64_t
     double __align;
 } fpos_t;
 
+extern FILE* const stdin;
+extern FILE* const stdout;
+extern FILE* const stderr;
+
+#define stdin  (stdin)
+#define stdout (stdout)
+#define stderr (stderr)
+
 char* fgets(char* restrict str, int num, FILE* restrict stream );
 FILE* fopen(const char* restrict name, const char* restrict type);
 FILE* freopen(const char* restrict filename, const char* restrict mode, FILE* restrict f);
@@ -57,6 +65,8 @@ int fputc(int character, FILE* stream);
 int fputs(const char* restrict str, FILE* restrict stream );
 int fseek(FILE* stream, long int offset, int origin);
 int fsetpos(FILE* restrict stream, const fpos_t* pos);
+int getchar(void);
+int putchar(int character);
 int setvbuf(FILE* restrict f, char* restrict buf, int type, size_t size);
 int ungetc(int c, FILE* f);
 long int ftell(FILE* stream);
@@ -69,18 +79,20 @@ void setbuf(FILE* restrict f, char* restrict buf);
 #define putc fputc
 #define getc fgetc
 
-int sprintf(char* __restrict, const char* __restrict, ...);
-int snprintf(char* __restrict, size_t, const char* __restrict, ...);
-
-int vsprintf(char* __restrict, const char* __restrict, __isoc_va_list);
-int vsnprintf(char* __restrict, size_t, const char* __restrict, __isoc_va_list);
+int printf(const char* format, ...);
 int fprintf(FILE* restrict f, const char* restrict fmt, ...);
+int snprintf(char* restrict s, size_t n, const char* restrict fmt, ...);
+int sprintf(char* restrict s, const char* restrict fmt, ...);
 int vfprintf(FILE* restrict f, const char* restrict fmt, va_list ap);
+int vsnprintf(char* restrict s, size_t n, const char* restrict fmt, __isoc_va_list);
+int vsprintf(char* restrict, const char* restrict, __isoc_va_list);
 
-int sscanf(const char* __restrict, const char* __restrict, ...);
-int vsscanf(const char* __restrict, const char* __restrict, __isoc_va_list);
+int scanf(const char* format, ...);
 int fscanf(FILE* restrict f, const char* restrict fmt, ...);
+int sscanf(const char* restrict, const char* restrict, ...);
 int vfscanf(FILE* restrict f, const char* restrict fmt, va_list ap);
+int vsscanf(const char* restrict, const char* restrict, __isoc_va_list);
+int vscanf(const char* restrict fmt, __isoc_va_list);
 
 #ifdef __cplusplus
 }

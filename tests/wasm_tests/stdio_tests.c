@@ -754,6 +754,108 @@ int test_ungetc(void)
     return (0);
 }
 
+int test_std_handles(void)
+{
+    FILE* handles[] = { stdout, stderr, stdin };
+    const char* redirect_mode[] = { "w", "w", "r" };
+    const char* names[] = { "stdout", "stderr", "stdin" };
+    for(int i = 0; i < 3; ++i)
+    {
+        FILE* f = handles[i];
+        if(f != stdin)
+        {
+            if(fprintf(f, "printing this should result in an error") > 0 || !ferror(f))
+            {
+                oc_log_error("%s initial state should error on any operation", names[i]);
+                return (-1);
+            }
+            clearerr(f);
+
+            if(fputc('a', f) != EOF || !ferror(f))
+            {
+                oc_log_error("%s initial state should error on any operation", names[i]);
+                return (-1);
+            }
+            clearerr(f);
+        }
+        else
+        {
+            char in_buffer[64];
+            if(scanf("%s", in_buffer) > 0 || !ferror(f))
+            {
+                oc_log_error("%s initial state should error on any operation", names[i]);
+                return (-1);
+            }
+            clearerr(f);
+
+            if(getchar() != EOF || !ferror(f))
+            {
+                oc_log_error("%s initial state should error on any operation", names[i]);
+                return (-1);
+            }
+            clearerr(f);
+        }
+
+        f = freopen("test_std_handles.txt", redirect_mode[i], f);
+        if(f == NULL)
+        {
+            oc_log_error("failed reopening std handle %s", names[i]);
+            return (-1);
+        }
+
+        // test_std_handles.txt gets written to first so reading from stdin should be fine
+        oc_str8 test_string = OC_STR8("this_string_should_go_in_a_file.note_lack_of_whitespace");
+        char test_char = '!';
+
+        if(f != stdin)
+        {
+
+            if(fprintf(f, "%s\n", test_string.ptr) <= 0 || ferror(f))
+            {
+                oc_log_error("caught error printing data to %s after reopen", names[i]);
+                return (-1);
+            }
+
+            if(fputc(test_char, f) == EOF || ferror(f))
+            {
+                oc_log_error("%s initial state should error on any operation", names[i]);
+                return (-1);
+            }
+
+            fflush(f);
+        }
+        else
+        {
+            char in_buffer[64] = { 0 };
+            if(scanf("%s\n", in_buffer) <= 0 || ferror(f))
+            {
+                oc_log_error("%s should be able to read from file. got: '%s'", names[i], in_buffer);
+                return (-1);
+            }
+
+            if(oc_str8_cmp(test_string, oc_str8_from_buffer(strlen(in_buffer), in_buffer)))
+            {
+                oc_log_error("didn't read expected string from test file, got '%s' but expected '%s'", in_buffer, test_string.ptr);
+                return (-1);
+            }
+
+            int read_char = getchar();
+            if(read_char == EOF || ferror(f))
+            {
+                oc_log_error("caught error calling getchar() for handle %s. read_char: %d", names[i], read_char);
+                return (-1);
+            }
+            if(read_char != test_char)
+            {
+                oc_log_error("%s didn't read expected char from file, got %c but expected %c", names[i], read_char, test_char);
+                return (-1);
+            }
+        }
+    }
+
+    return (0);
+}
+
 int test_jail(void)
 {
     FILE* f = fopen("../out_of_data_dir.txt", "w");
@@ -828,6 +930,10 @@ ORCA_EXPORT i32 oc_on_test(void)
         return (-1);
     }
     if(test_ungetc())
+    {
+        return (-1);
+    }
+    if(test_std_handles())
     {
         return (-1);
     }

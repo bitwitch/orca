@@ -75,11 +75,10 @@ hidden int __lockfile(FILE*);
 hidden void __unlockfile(FILE*);
 #endif
 
-hidden size_t __stdio_read(FILE*, unsigned char*, size_t);
-hidden size_t __stdio_write(FILE*, const unsigned char*, size_t);
-hidden size_t __stdout_write(FILE*, const unsigned char*, size_t);
-hidden off_t __stdio_seek(FILE*, off_t, int);
-hidden int __stdio_close(FILE*);
+hidden size_t __file_read_err_shim(FILE* stream, unsigned char* buffer, size_t size);
+hidden size_t __file_write_err_shim(FILE* stream, const unsigned char* buffer, size_t size);
+hidden off_t __file_seek_err_shim(FILE* stream, off_t offset, int origin);
+hidden int __file_close_err_shim(FILE* stream);
 
 hidden int __toread(FILE*);
 hidden int __towrite(FILE*);
