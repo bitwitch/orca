@@ -796,7 +796,7 @@ int test_std_handles(void)
             clearerr(f);
         }
 
-        f = freopen("test_std_handles.txt", redirect_mode[i], f);
+        f = freopen("std_handles_test.txt", redirect_mode[i], f);
         if(f == NULL)
         {
             oc_log_error("failed reopening std handle %s", names[i]);
@@ -850,6 +850,38 @@ int test_std_handles(void)
                 oc_log_error("%s didn't read expected char from file, got %c but expected %c", names[i], read_char, test_char);
                 return (-1);
             }
+        }
+    }
+
+    return (0);
+}
+
+int test_perror(void)
+{
+    oc_str8 filename = OC_STR8("perror_test.txt");
+    {
+        freopen(filename.ptr, "w", stderr);
+        fflush(stderr);
+        errno = ECANCELED;
+        perror(NULL);
+        errno = ECANCELED;
+        perror("test msg");
+        fflush(stderr);
+    }
+
+    {
+        oc_str8 expected = OC_STR8("Operation canceled\ntest msg: Operation canceled\n");
+        FILE* f = fopen(filename.ptr, "r");
+        if(f == NULL)
+        {
+            oc_log_error("failed to open perror file");
+            return (-1);
+        }
+
+        if(check_string(f, expected))
+        {
+            oc_log_error("didn't read expected string from perror file");
+            return (-1);
         }
     }
 
@@ -934,6 +966,10 @@ ORCA_EXPORT i32 oc_on_test(void)
         return (-1);
     }
     if(test_std_handles())
+    {
+        return (-1);
+    }
+    if(test_perror())
     {
         return (-1);
     }

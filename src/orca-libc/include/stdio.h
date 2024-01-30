@@ -73,6 +73,7 @@ long int ftell(FILE* stream);
 size_t fread(void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
 size_t fwrite(const void* restrict buffer, size_t size, size_t n, FILE* restrict stream);
 void clearerr(FILE *f);
+void perror(const char* msg);
 void rewind(FILE* stream);
 void setbuf(FILE* restrict f, char* restrict buf);
 
