@@ -19,6 +19,7 @@
 
 #include "sdk_path.c"
 #include "bundle.c"
+#include "update.c"
 #include "system.c"
 
 int version(int argc, char** argv);
@@ -31,6 +32,7 @@ int main(int argc, char** argv)
     bool* doSdkPath = flag_command(&c, "sdk-path", "Print the path to the installed Orca SDK.");
     bool* doBundle = flag_command(&c, "bundle", "Package a WebAssembly module into a standalone Orca application.");
     bool* doVersion = flag_command(&c, "version", "Print the current Orca version.");
+    bool* doUpdate = flag_command(&c, "update", "Install the latest version of Orca.");
 
     // Hacks to achieve the following:
     // - `orca` => `orca -h`
@@ -77,6 +79,10 @@ int main(int argc, char** argv)
     else if(*doVersion)
     {
         return version(rest_argc, rest_argv);
+    }
+    else if(*doUpdate)
+    {
+        return update(rest_argc, rest_argv);
     }
     else
     {
