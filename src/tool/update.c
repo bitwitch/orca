@@ -12,11 +12,15 @@
 #include "flag.h"
 #include "orca.h"
 
+
+static size_t update_write_callback(char *data, size_t size, size_t nmemb, void *userdata) {
+	printf("update_write_callback: data=%p size=%llu nmemb=%llu\n", data, size, nmemb);
+	oc_file *file = (oc_file *)userdata;
+	return oc_file_write(*file, size * nmemb, data);
+}
+
 int update(int argc, char** argv)
 {
-    // oc_arena a;
-    // oc_arena_init(&a);
-
     Flag_Context c;
     flag_init_context(&c);
 
@@ -33,7 +37,41 @@ int update(int argc, char** argv)
         return 1;
     }
 
-	printf("Update command called\n");
-	return 0;
+	// download latest version of runtime
+	// unzip it
+	// rename orca-runtime-win to vX.X.X
+	// download source code 
+	// write new version to "current" file
+
+
+	CURL *curl = curl_easy_init();
+	if (!curl) {
+		fprintf(stderr, "Failed to initialize curl\n");
+		return 1;
+	}
+
+	int result = 0;
+
+	char errbuf[CURL_ERROR_SIZE] = {0};
+	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, update_write_callback);
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
+
+	oc_file file = oc_file_open(OC_STR8("RUNTIME.zip"), OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &file);
+	curl_easy_setopt(curl, CURLOPT_URL, 
+		"https://github.com/bitwitch/orca/releases/latest/download/orca-runtime-win.zip");
+	CURLcode res = curl_easy_perform(curl);
+
+	oc_file_close(file);
+
+	if (res != CURLE_OK) {
+		fprintf(stderr, "Curl request failed: %s\n", curl_easy_strerror(res));
+		result = 1;
+	}
+
+	curl_easy_cleanup(curl);
+
+	return result;
 }
 
