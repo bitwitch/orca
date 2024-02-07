@@ -530,12 +530,29 @@ def build_tool(args):
 
         outname = "orca.exe" if platform.system() == "Windows" else "orca"
 
+        target = []
+
+        includes = [ 
+            "-I", "..",
+            "-I", "../ext/curl/include",
+        ]
+
         if platform.system() == "Windows":
+            shutil.copy("../ext/curl/bin/libcurl.dll", "build/bin")
+
             libs = [
                 "-l", "shlwapi",
                 "-l", "shell32",
                 "-l", "ole32",
+                "-L", "../ext/curl/lib",
+                "-l", "libcurl",
             ]
+
+            # NOTE(shaw): it seems the default target for clang that Visual
+            # Studio 2022 installs is i686-pc-windows-msvc which is 32-bit.
+            # This will cause platform.h to error during compilation as only
+            # _WIN32 is defined. So forcing a 64-bit target here.
+            target = [ "-target", "x86_64-pc-windows-msvc" ]
 
         elif platform.system() == "Darwin":
             libs = ["-framework", "Cocoa"]
@@ -544,9 +561,10 @@ def build_tool(args):
 
         subprocess.run([
             "clang",
+            *target,
             "-std=c11",
             "-g", #"-gcodeview", #output debug info
-            "-I", "..",
+            *includes,
             "-D", "FLAG_IMPLEMENTATION",
             "-D", "OC_NO_APP_LAYER",
             "-D", f"ORCA_TOOL_VERSION={githash}",
