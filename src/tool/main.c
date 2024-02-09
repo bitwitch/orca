@@ -16,9 +16,10 @@
 
 #include "orca.c"
 #include "util.c"
-
 #include "sdk_path.c"
 #include "bundle.c"
+#include "microtar.c"
+#include "tarball.c"
 #include "update.c"
 #include "system.c"
 

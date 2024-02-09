@@ -517,6 +517,76 @@ def download_angle():
 
     shutil.copytree(f"scripts/files/angle/", "src/ext/angle", dirs_exist_ok=True)
 
+def build_tool_win(githash, outname):
+    includes = [ 
+        "/I", "..",
+        "/I", "../ext/curl/include",
+        "/I", "../ext/zlib/include",
+        "/I", "../ext/microtar"
+    ]
+
+    # TODO(shaw): statically link libcurl
+    shutil.copy("../ext/curl/bin/libcurl.dll", "build/bin")
+    shutil.copy("../ext/curl/bin/libcurl.dll", "../../build/bin")
+    libs = [
+        "shlwapi.lib",
+        "shell32.lib",
+        "ole32.lib",
+        "/LIBPATH:../ext/curl/lib",
+        "libcurl.lib",
+        "/LIBPATH:../ext/zlib/lib",
+        "zlib.lib",
+    ]
+
+    subprocess.run([
+        "cl",
+        "/nologo",
+        "/Zi", "/Zc:preprocessor",
+        "/std:c11", "/experimental:c11atomics",
+        "/O2",
+        *includes,
+        "/DFLAG_IMPLEMENTATION",
+        "/DOC_NO_APP_LAYER",
+        "/DOC_BUILD_DLL",
+        "/D", f"ORCA_TOOL_VERSION={githash}",
+        "/MD",
+        f"/Febuild/bin/{outname}",
+        "main.c",
+        "/link",
+        *libs,
+    ], check=True)
+
+def build_tool_mac(githash, outname):
+    outname = "orca"
+    includes = [ 
+        "-I", "..",
+        "-I", "../ext/curl/include",
+        "-I", "../ext/zlib/include",
+        "-I", "../ext/microtar"
+    ]
+
+    # TODO(shaw): fix build on mac, needs curl and zlib
+    libs = ["-framework", "Cocoa"]
+
+    subprocess.run([
+        "clang",
+        "-std=c11",
+        "-g", #"-gcodeview", #output debug info
+        *includes,
+        "-D", "FLAG_IMPLEMENTATION",
+        "-D", "OC_NO_APP_LAYER",
+        "-D", f"ORCA_TOOL_VERSION={githash}",
+        *libs,
+        "-MJ", "build/main.json",
+        "-o", f"build/bin/{outname}",
+        "main.c",
+    ], check=True)
+
+    with open("build/compile_commands.json", "w") as f:
+        f.write("[\n")
+        with open("build/main.json") as m:
+            f.write(m.read())
+        f.write("]")
 
 def build_tool(args):
     ensure_programs()
@@ -527,58 +597,15 @@ def build_tool(args):
 
         res = subprocess.run(["git", "rev-parse", "--short", "HEAD"], check=True, capture_output=True, text=True)
         githash = res.stdout.strip()
-
         outname = "orca.exe" if platform.system() == "Windows" else "orca"
 
-        target = []
-
-        includes = [ 
-            "-I", "..",
-            "-I", "../ext/curl/include",
-        ]
-
         if platform.system() == "Windows":
-            shutil.copy("../ext/curl/bin/libcurl.dll", "build/bin")
-
-            libs = [
-                "-l", "shlwapi",
-                "-l", "shell32",
-                "-l", "ole32",
-                "-L", "../ext/curl/lib",
-                "-l", "libcurl",
-            ]
-
-            # NOTE(shaw): it seems the default target for clang that Visual
-            # Studio 2022 installs is i686-pc-windows-msvc which is 32-bit.
-            # This will cause platform.h to error during compilation as only
-            # _WIN32 is defined. So forcing a 64-bit target here.
-            target = [ "-target", "x86_64-pc-windows-msvc" ]
-
+            build_tool_win(githash, outname)
         elif platform.system() == "Darwin":
-            libs = ["-framework", "Cocoa"]
+            build_tool_mac(githash, outname)
         else:
-            libs = []
-
-        subprocess.run([
-            "clang",
-            *target,
-            "-std=c11",
-            "-g", #"-gcodeview", #output debug info
-            *includes,
-            "-D", "FLAG_IMPLEMENTATION",
-            "-D", "OC_NO_APP_LAYER",
-            "-D", f"ORCA_TOOL_VERSION={githash}",
-            *libs,
-            "-MJ", "build/main.json",
-            "-o", f"build/bin/{outname}",
-            "main.c"
-        ], check=True)
-
-        with open("build/compile_commands.json", "w") as f:
-            f.write("[\n")
-            with open("build/main.json") as m:
-                f.write(m.read())
-            f.write("]")
+            log_error(f"can't build cli tool for unknown platform '{platform.system()}'")
+            exit(1)
 
     shutil.copy(f"src/tool/build/bin/{outname}", "build/bin/")
 
