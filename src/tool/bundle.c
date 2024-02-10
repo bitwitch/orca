@@ -96,21 +96,6 @@ int bundle(int argc, char** argv)
 #endif
 }
 
-#define TRY(cmd)                                                                              \
-    {                                                                                         \
-        bool __result = cmd;                                                                  \
-        if(!__result)                                                                         \
-        {                                                                                     \
-            int code = oc_sys_err.code;                                                       \
-            if(code == 0)                                                                     \
-            {                                                                                 \
-                code = 1;                                                                     \
-            }                                                                                 \
-            fprintf(stderr, "ERROR (code %d): %.*s\n", code, oc_str8_printf(oc_sys_err.msg)); \
-            return code;                                                                      \
-        }                                                                                     \
-    }
-
 #if OC_PLATFORM_WINDOWS
 
 int winBundle(

@@ -188,3 +188,11 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
 
     return true;
 }
+
+// TODO(shaw): implement 
+bool oc_sys_move(oc_str8 src, oc_str8 dst)
+{
+	OC_ASSERT(0, "oc_sys_move not implemented for osx");
+	return false;
+}
+
