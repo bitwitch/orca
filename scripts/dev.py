@@ -525,15 +525,20 @@ def build_tool_win(githash, outname):
         "/I", "../ext/microtar"
     ]
 
-    # TODO(shaw): statically link libcurl
-    shutil.copy("../ext/curl/bin/libcurl.dll", "build/bin")
-    shutil.copy("../ext/curl/bin/libcurl.dll", "../../build/bin")
     libs = [
         "shlwapi.lib",
         "shell32.lib",
         "ole32.lib",
+
+        # libs needed by curl
+        "advapi32.lib", 
+        "crypt32.lib", 
+        "normaliz.lib", 
+        "ws2_32.lib", 
+        "wldap32.lib",
         "/LIBPATH:../ext/curl/lib",
-        "libcurl.lib",
+        "libcurl_a.lib",
+
         "/LIBPATH:../ext/zlib/lib",
         "zlib.lib",
     ]
@@ -548,6 +553,7 @@ def build_tool_win(githash, outname):
         "/DFLAG_IMPLEMENTATION",
         "/DOC_NO_APP_LAYER",
         "/DOC_BUILD_DLL",
+        "/DCURL_STATICLIB",
         "/D", f"ORCA_TOOL_VERSION={githash}",
         "/MD",
         f"/Febuild/bin/{outname}",
