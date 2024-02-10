@@ -65,7 +65,7 @@ int gzip_decompress(gzFile in_file, FILE *out_file) {
 }
 
 // TODO(shaw): use oc_file here
-int untar(FILE *file) {
+int untar(FILE *file, oc_str8 out_dir) {
 	if (fseek(file, 0, SEEK_SET) != 0) {
 		return MTAR_ESEEKFAIL;
 	}
@@ -83,82 +83,104 @@ int untar(FILE *file) {
 		printf("%s (%d bytes)\n", h.name, h.size);
 
 		if (h.type == MTAR_TDIR) {
-			if (!oc_sys_mkdirs(OC_STR8(h.name))) {
+			oc_arena_scope scratch = oc_scratch_begin();
+			oc_str8 dir_path = oc_path_append(scratch.arena, out_dir, OC_STR8(h.name));
+			bool ok = oc_sys_mkdirs(dir_path);
+			oc_scratch_end(scratch);
+			if (!ok) {
 				err = MTAR_EWRITEFAIL;
 				break;
 			}
+
 		} else if (h.type == MTAR_TREG) {
 			oc_arena_scope scratch = oc_scratch_begin();
 			char *buf = oc_arena_push(scratch.arena, h.size + 1);
-			mtar_read_data(&tar, buf, h.size);
-			oc_file file = oc_file_open(OC_STR8(h.name), OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
+			err = mtar_read_data(&tar, buf, h.size);
+			if (err != MTAR_ESUCCESS) {
+				oc_scratch_end(scratch);
+				break;
+			}
+			oc_str8 path = oc_path_append(scratch.arena, out_dir, OC_STR8(h.name));
+			oc_file file = oc_file_open(path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
 			u64 written = oc_file_write(file, h.size, buf);
+			oc_file_close(file);
 			oc_scratch_end(scratch);
 			if (written != h.size) {
 				err = MTAR_EWRITEFAIL;
 				break;
 			}
+
 		} else {
-			// unrecognized file type
-			err = MTAR_EREADFAIL;
-			break;
+			// skip unknown / unhandled file types
 		}
 
 		mtar_next(&tar);
 		err = mtar_read_header(&tar, &h);
 	}
 	
-	return 0;
+	if (err == MTAR_ENULLRECORD) {
+		err = MTAR_ESUCCESS;
+	}
+
+	return err;
 }
 
-int tarball_extract(oc_str8 filepath) {
-	int result = 0;
-	char *in_path = filepath.ptr;
-	char *out_path = "_temp_tarfile_";
-	FILE *out_file = NULL;
+bool tarball_extract(oc_str8 filepath, oc_str8 out_dir) {
+	bool result = true;
+	oc_arena_scope scratch = oc_scratch_begin();
 
-	gzFile in_file = gzopen(in_path, "rb");
+	oc_str8 filename = oc_path_slice_filename(filepath);
+	oc_str8 gz_ext = OC_STR8(".gz");
+	oc_str8 tar_path = {0};
+	if (oc_str8_ends_with(filename, gz_ext)) {
+		oc_str8 tar_name = oc_str8_slice(filename, 0, filename.len - gz_ext.len);
+		tar_path = oc_path_append(scratch.arena, out_dir, tar_name);
+	} else {
+		tar_path = oc_path_append(scratch.arena, out_dir, OC_STR8("temp.tar"));
+	}
+
+	char *tar_path_cstr = oc_str8_to_cstring(scratch.arena, tar_path);
+	char *filepath_cstr = oc_str8_to_cstring(scratch.arena, filepath);
+	FILE *tar_file = NULL;
+
+	gzFile in_file = gzopen(filepath_cstr, "rb");
 	if (!in_file) {
-		fprintf(stderr, "Failed to open file: %s\n", in_path);
-		result = 1;
+		result = false;
 		goto cleanup;
 	}
 
 	if (gzbuffer(in_file, CHUNK_SIZE) == -1) {
-		fprintf(stderr, "Failed to grow gzbuffer size to: %d\n", CHUNK_SIZE);
-		result = 1;
+		result = false;
 		goto cleanup;
 	}
 
-	out_file = fopen(out_path, "wb+");
-	if (!out_file) {
-		fprintf(stderr, "Failed to open file: %s\n", out_path);
-		result = 1;
+	tar_file = fopen(tar_path_cstr, "wb+");
+	if (!tar_file) {
+		result = false;
 		goto cleanup;
 	}
 
-	int err = gzip_decompress(in_file, out_file);
+	int err = gzip_decompress(in_file, tar_file);
 	if (err != Z_OK) {
-		fprintf(stderr, "gzip_decompress: %s\n", gzerror(in_file, &err));
-		result = 1;
+		result = false;
 		goto cleanup;
 	}
 
-	err = untar(out_file);
+	err = untar(tar_file, out_dir);
 	if (err != MTAR_ESUCCESS) {
-		fprintf(stderr, "untar: %s\n", mtar_strerror(err));
-		result = 1;
+		result = false;
 	}
 
 cleanup:
 	if (in_file) {
 		gzclose(in_file);
 	}
-	if (out_file) {
-		fclose(out_file);
-		remove(out_path);
+	if (tar_file) {
+		fclose(tar_file);
+		// remove(tar_path_cstr);
 	}
-	return 0;
+	oc_scratch_end(scratch);
+	return result;
 }
 
 

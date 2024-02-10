@@ -175,3 +175,35 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
 
     return true;
 }
+
+bool oc_sys_move(oc_str8 src, oc_str8 dst) 
+{
+    if(!oc_sys_exists(src)) 
+	{
+        oc_sys_err = (oc_sys_err_def){
+            .msg = OC_STR8("source file or directory does not exist"),
+        };
+		return false;
+	}
+
+	char full_src[_MAX_PATH];
+	char full_dst[_MAX_PATH];
+    char* csrc = _fullpath(full_src, src.ptr, _MAX_PATH);
+    char* cdst = _fullpath(full_dst, dst.ptr, _MAX_PATH);
+
+    oc_arena_scope scratch = oc_scratch_begin();
+    oc_str8 cmd = oc_str8_pushf(scratch.arena, "move \"%s\" \"%s\"", csrc, cdst);
+    int result = system(cmd.ptr);
+    oc_scratch_end(scratch);
+
+    if(result)
+    {
+        oc_sys_err = (oc_sys_err_def){
+            .msg = OC_STR8("failed to move file or directory"),
+            .code = result,
+        };
+        return false;
+    }
+
+    return true;
+}

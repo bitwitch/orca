@@ -10,6 +10,6 @@
 #define __TARBALL_H_
 
 #include "orca.h"
-int tarball_extract(oc_str8 filepath);
+bool tarball_extract(oc_str8 filepath, oc_str8 out_dir);
 
 #endif // __TARBALL_H_
