@@ -189,10 +189,51 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
     return true;
 }
 
-// TODO(shaw): implement 
+// TODO(shaw): test on mac
 bool oc_sys_move(oc_str8 src, oc_str8 dst)
 {
-	OC_ASSERT(0, "oc_sys_move not implemented for osx");
-	return false;
-}
+	bool result = true;
 
+	oc_arena_scope scratch = oc_scratch_begin();
+	const char* csrc = oc_str8_to_cstring(scratch.arena, src);
+	const char* cdst = oc_str8_to_cstring(scratch.arena, dst);
+
+	oc_str8 src_dir = oc_path_slice_directory(src);
+	oc_str8 dst_dir = oc_path_slice_directory(dst);
+
+	if (oc_str8_cmp(src_dir, dst_dir) == 0) {
+		if (rename(csrc, cdst) != 0) {
+			oc_sys_err = (oc_sys_err_def){
+				.msg = OC_STR8("failed to move file or directory")
+			};
+			result = false;
+		}
+		oc_scratch_end(scratch);
+		return result;
+	}
+
+	if (oc_sys_isdir(src)) {
+		if (!oc_sys_copytree(src, dst)) {
+			result = false;
+		}
+		if (result && !os_sys_rmdir(src)) {
+			result = false;
+		}
+	} else {
+		if (!oc_sys_copy(src, dst)) {
+			result = false;
+		}
+		if (result && remove(csrc) != 0) {
+			result = false;
+		}
+	}
+
+	if (!result) {
+		oc_sys_err = (oc_sys_err_def){
+			.msg = OC_STR8("failed to move file or directory"),
+		};
+	}
+
+	oc_scratch_end(scratch);
+	return result;
+}
