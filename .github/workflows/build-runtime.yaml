@@ -19,16 +19,16 @@ jobs:
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           orcadev.bat build-runtime
 
-      - name: Zip
-        shell: powershell
+      - name: Tarball
+        shell: cmd
         run: |
-          Copy-Item -Path build -Destination orca-runtime-win -Recurse
-          Compress-Archive -Path orca-runtime-win -DestinationPath orca-runtime-win.zip
+          rename build orca-runtime-win
+          tar -czf orca-runtime-win.tar.gz orca-runtime-win
 
       - uses: actions/upload-artifact@v4
         with:
           name: orca-runtime-win
-          path: orca-runtime-win.zip
+          path: orca-runtime-win.tar.gz
 
   build-macos-x64:
     runs-on: macos-latest
@@ -40,11 +40,9 @@ jobs:
           python-version: '3.10' 
 
       - name: Build
-        run: ./orcadev build-runtime
-      
-      - name: Tar
         run: |
-          cp -r build orca-runtime-mac-x64
+          ./orcadev build-runtime
+          mv build orca-runtime-mac-x64
           tar -c -z -f orca-runtime-mac-x64.tar.gz orca-runtime-mac-x64
 
       - uses: actions/upload-artifact@v4
@@ -62,11 +60,9 @@ jobs:
           python-version: '3.10' 
 
       - name: Build
-        run: ./orcadev build-runtime
-      
-      - name: Tar
         run: |
-          cp -r build orca-runtime-mac-arm64
+          ./orcadev build-runtime
+          mv build orca-runtime-mac-arm64
           tar -c -z -f orca-runtime-mac-arm64.tar.gz orca-runtime-mac-arm64
 
       - uses: actions/upload-artifact@v4
