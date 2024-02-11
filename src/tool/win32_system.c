@@ -65,15 +65,16 @@ bool oc_sys_isdir(oc_str8 path)
 
 bool oc_sys_mkdirs(oc_str8 path)
 {
-    char* abspath = _fullpath(NULL, path.ptr, path.len * 2);
-    // TODO: remove these debugs
-    printf("PATH: %.*s\n", oc_str8_printf(path));
-    printf("ABSPATH: %s\n", abspath);
-    oc_arena_scope scratch = oc_scratch_begin();
-    oc_str8 cmd = oc_str8_pushf(scratch.arena, "mkdir \"%s\"", abspath);
+
+	oc_arena_scope scratch = oc_scratch_begin();
+	const char *cpath = oc_str8_to_cstring(scratch.arena, path);
+
+	char path_buf[_MAX_PATH];
+	char *abspath = _fullpath(path_buf, cpath, _MAX_PATH);
+
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, "mkdir \"%s\"", abspath);
     int result = system(cmd.ptr);
     oc_scratch_end(scratch);
-    free(abspath);
 
     if(result)
     {
@@ -118,14 +119,18 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
         return false;
     }
 
-    char* csrc = _fullpath(NULL, src.ptr, src.len * 2);
-    char* cdst = _fullpath(NULL, dst.ptr, dst.len * 2);
-    oc_arena_scope scratch = oc_scratch_begin();
-    oc_str8 cmd = oc_str8_pushf(scratch.arena, "copy \"%s\" \"%s\"", csrc, cdst);
+	oc_arena_scope scratch = oc_scratch_begin();
+	char *csrc = oc_str8_to_cstring(scratch.arena, src);
+	char *cdst = oc_str8_to_cstring(scratch.arena, dst);
+
+	char src_buf[_MAX_PATH];
+	char dst_buf[_MAX_PATH];
+	char *full_src = _fullpath(src_buf, csrc, _MAX_PATH);
+	char *full_dst = _fullpath(dst_buf, cdst, _MAX_PATH);
+
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, "copy \"%s\" \"%s\"", full_src, full_dst);
     int result = system(cmd.ptr);
     oc_scratch_end(scratch);
-    free(csrc);
-    free(cdst);
 
     if(result)
     {
@@ -155,14 +160,18 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
         return false;
     }
 
-    char* csrc = _fullpath(NULL, src.ptr, src.len * 2);
-    char* cdst = _fullpath(NULL, dst.ptr, dst.len * 2);
-    oc_arena_scope scratch = oc_scratch_begin();
-    oc_str8 cmd = oc_str8_pushf(scratch.arena, "xcopy /s /e /y \"%s\" \"%s\"", csrc, cdst);
+	oc_arena_scope scratch = oc_scratch_begin();
+	char *csrc = oc_str8_to_cstring(scratch.arena, src);
+	char *cdst = oc_str8_to_cstring(scratch.arena, dst);
+
+	char src_buf[_MAX_PATH];
+	char dst_buf[_MAX_PATH];
+	char *full_src = _fullpath(src_buf, csrc, _MAX_PATH);
+	char *full_dst = _fullpath(dst_buf, cdst, _MAX_PATH);
+
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, "xcopy /s /e /y \"%s\" \"%s\"", full_src, full_dst);
     int result = system(cmd.ptr);
     oc_scratch_end(scratch);
-    free(csrc);
-    free(cdst);
 
     if(result)
     {
@@ -178,32 +187,35 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
 
 bool oc_sys_move(oc_str8 src, oc_str8 dst) 
 {
-    if(!oc_sys_exists(src)) 
+	if(!oc_sys_exists(src)) 
 	{
-        oc_sys_err = (oc_sys_err_def){
-            .msg = OC_STR8("source file or directory does not exist"),
-        };
+		oc_sys_err = (oc_sys_err_def){
+			.msg = OC_STR8("failed to move file or directory, source does not exist"),
+		};
 		return false;
 	}
 
-	char full_src[_MAX_PATH];
-	char full_dst[_MAX_PATH];
-    char* csrc = _fullpath(full_src, src.ptr, _MAX_PATH);
-    char* cdst = _fullpath(full_dst, dst.ptr, _MAX_PATH);
+	oc_arena_scope scratch = oc_scratch_begin();
+	char *csrc = oc_str8_to_cstring(scratch.arena, src);
+	char *cdst = oc_str8_to_cstring(scratch.arena, dst);
 
-    oc_arena_scope scratch = oc_scratch_begin();
-    oc_str8 cmd = oc_str8_pushf(scratch.arena, "move \"%s\" \"%s\"", csrc, cdst);
-    int result = system(cmd.ptr);
-    oc_scratch_end(scratch);
+	char src_buf[_MAX_PATH];
+	char dst_buf[_MAX_PATH];
+	char *full_src = _fullpath(src_buf, csrc, _MAX_PATH);
+	char *full_dst = _fullpath(dst_buf, cdst, _MAX_PATH);
 
-    if(result)
-    {
-        oc_sys_err = (oc_sys_err_def){
-            .msg = OC_STR8("failed to move file or directory"),
-            .code = result,
-        };
-        return false;
-    }
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, "move \"%s\" \"%s\"", full_src, full_dst);
+	int result = system(cmd.ptr);
+	oc_scratch_end(scratch);
 
-    return true;
+	if(result)
+	{
+		oc_sys_err = (oc_sys_err_def){
+			.msg = OC_STR8("failed to move file or directory"),
+				.code = result,
+		};
+		return false;
+	}
+
+	return true;
 }
