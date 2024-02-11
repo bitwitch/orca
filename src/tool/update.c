@@ -14,6 +14,24 @@
 #include "tarball.h"
 #include "orca.h"
 
+#if OC_PLATFORM_WINDOWS
+        #define RUNTIME_FILENAME OC_STR8("orca-runtime-win.tar.gz")
+        #define RUNTIME_EXE_PATH OC_STR8("orca-runtime-win/bin/orca_runtime.exe")
+        #define ORCA_DLL_PATH    OC_STR8("orca-runtime-win/bin/orca.dll")
+#elif OC_PLATFORM_MACOS
+    #if OC_ARCH_ARM64
+        #define RUNTIME_FILENAME OC_STR8("orca-runtime-mac-arm64.tar.gz")
+        #define RUNTIME_EXE_PATH OC_STR8("orca-runtime-mac-arm64/bin/orca_runtime")
+        #define ORCA_DLL_PATH    OC_STR8("orca-runtime-mac-arm64/bin/liborca.dylib")
+    #else
+        #define RUNTIME_FILENAME OC_STR8("orca-runtime-mac-x64.tar.gz")
+        #define RUNTIME_EXE_PATH OC_STR8("orca-runtime-mac-x64/bin/orca_runtime")
+        #define ORCA_DLL_PATH    OC_STR8("orca-runtime-mac-x64/bin/liborca.dylib")
+    #endif
+#else
+	#error Unsupported platform
+#endif
+
 static size_t curl_callback_write_to_file(char *data, size_t size, size_t nmemb, void *userdata) 
 {
 	oc_file *file = (oc_file *)userdata;
@@ -70,58 +88,33 @@ int update(int argc, char** argv)
         return 1;
     }
 
-	// make a request to releases/latest and follow redirects to get the actual release url
-	// get the version number from the realease url?
-	// check if we already have this version, and if so just print "up to date"
-	// download latest version of runtime
-	// unzip it
-	// rename orca-runtime-win to vX.X.X
-	// download source code 
-	// write new version current_versions.txt
-	// append version number and checksum to all_checksums.txt
-
-	/*
-	orca
-		orca.exe
-		current_version.txt (file containing vX.X.X)
-		all_checksums.txt
-		vX.X.X
-			bin
-				orca_runtime.exe
-			orca-libc
-				orca_libc.wasm
-			lib
-				...
-			resources
-				font.ttf
-			src
-				(full source code)
-	 */
-
-	int result = 0;
-
 	CURL *curl = curl_easy_init();
 	if (!curl) {
 		fprintf(stderr, "error: failed to initialize curl\n");
 		return 1;
 	}
 
+
+	// TODO(shaw): use main orca repo instead of my fork
+	oc_str8 repo_url_base = OC_STR8("https://github.com/bitwitch/orca");
+
 	//-----------------------------------------------------------------------------
 	// get the latest version number from github release url
 	//-----------------------------------------------------------------------------
+	oc_str8 latest_url = oc_path_append(&arena, repo_url_base, OC_STR8("/releases/latest"));
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1); // follow redirects
 	curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
-	curl_easy_setopt(curl, CURLOPT_URL, "https://github.com/bitwitch/orca/releases/latest");
+	curl_easy_setopt(curl, CURLOPT_URL, latest_url.ptr);
 	CURLcode curl_code = curl_easy_perform(curl);
 	if (curl_code != CURLE_OK) {
 		fprintf(stderr, "error: curl request failed: %s\n", curl_easy_strerror(curl_code));
 		return 1;
 	}
 
-	char *last_url_cstr = NULL;
-	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &last_url_cstr);
-	oc_str8 version = oc_path_slice_filename(OC_STR8(last_url_cstr));
+	char *final_url = NULL;
+	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &final_url);
+	oc_str8 version = oc_path_slice_filename(OC_STR8(final_url));
 	oc_str8 exe_path = oc_path_executable(&arena);
 	oc_str8 orca_dir = oc_path_slice_directory(exe_path);
 
@@ -147,55 +140,109 @@ int update(int argc, char** argv)
 	//-----------------------------------------------------------------------------
 	// download and extract latest source code
 	//-----------------------------------------------------------------------------
-	// TODO(shaw): use orca main repo instead of my fork repo
-	oc_str8 source_url = oc_str8_pushf(&arena, 
-		"https://github.com/bitwitch/orca/archive/refs/tags/%.*s.tar.gz", 
-		oc_str8_printf(version));
-	oc_str8 source_filename = oc_path_slice_filename(source_url);
-	oc_str8 source_filepath = oc_path_append(&arena, temp_dir, source_filename);
+	{
+		oc_str8 source_url = oc_str8_pushf(&arena, "/archive/refs/tags/%.*s.tar.gz", 
+			oc_str8_printf(version));
+		source_url = oc_path_append(&arena, repo_url_base, source_url);
+		oc_str8 source_filename = oc_path_slice_filename(source_url);
+		oc_str8 source_filepath = oc_path_append(&arena, temp_dir, source_filename);
 
-	curl_code = download_file(curl, source_url, source_filepath);
-	if (curl_code != CURLE_OK) {
-		fprintf(stderr, "error: failed to download file %s: %s\n", 
-			source_url.ptr, curl_last_error(curl_code));
-		return 1;
-	}
+		curl_code = download_file(curl, source_url, source_filepath);
+		if (curl_code != CURLE_OK) {
+			fprintf(stderr, "error: failed to download file %s: %s\n", 
+				source_url.ptr, curl_last_error(curl_code));
+			return 1;
+		}
 
-	if (!tarball_extract(source_filepath, temp_dir)) {
-		fprintf(stderr, "error: failed to extract files from %.*s\n", 
-			oc_str8_printf(source_filepath));
-		return 1;
-	}
+		if (!tarball_extract(source_filepath, temp_dir)) {
+			fprintf(stderr, "error: failed to extract files from %.*s\n", 
+				oc_str8_printf(source_filepath));
+			return 1;
+		}
 
-	oc_str8 old_dir = oc_str8_pushf(&arena, "orca-%.*s", oc_str8_printf(version));
-	old_dir = oc_path_append(&arena, temp_dir, old_dir);
-	oc_str8 new_dir = oc_path_append(&arena, version_dir, OC_STR8("src"));
+		// NOTE(shaw): github annoyingly removes 'v' from the directory name if the
+		// tag is of the form vX.X.X
+		oc_str8 repo_dir = {0};
+		if (version.ptr[0] == 'v') {
+			oc_str8 name = oc_str8_pushf(&arena, "orca-%.*s", version.len - 1, version.ptr + 1);
+			repo_dir = oc_path_append(&arena, temp_dir, name);
+		} else {
+			oc_str8 name = oc_str8_pushf(&arena, "orca-%.*s", oc_str8_printf(version));
+			repo_dir = oc_path_append(&arena, temp_dir, name);
+		}
 
-	if (!oc_sys_move(old_dir, new_dir)) {
-		fprintf(stderr, "error: failed to move %s to %s\n", old_dir.ptr, new_dir.ptr);
-		return 1;
+		oc_str8 repo_src_dir = oc_path_append(&arena, repo_dir, OC_STR8("src"));
+		oc_str8 repo_resources_dir = oc_path_append(&arena, repo_dir, OC_STR8("resources"));
+		oc_str8 src_dir = oc_path_append(&arena, version_dir, OC_STR8("src"));
+		oc_str8 resources_dir = oc_path_append(&arena, version_dir, OC_STR8("resources"));
+
+		TRY(oc_sys_move(repo_src_dir, src_dir));
+		TRY(oc_sys_move(repo_resources_dir, resources_dir));
 	}
 
 	//-----------------------------------------------------------------------------
 	// download and extract latest runtime
 	//-----------------------------------------------------------------------------
-	// TODO(shaw): use orca main repo instead of my fork repo
-	// oc_str8 runtime_url = OC_STR8("https://github.com/bitwitch/orca/releases/latest/download/orca-runtime-win.tar.gz");
-	oc_str8 runtime_url = OC_STR8("https://github.com/bitwitch/orca/releases/latest/download/orca-runtime-mac-x64.tar.gz");
-	oc_str8 runtime_filename = oc_path_slice_filename(runtime_url);
-	oc_str8 runtime_filepath = oc_path_append(&arena, temp_dir, runtime_filename);
+	{
+		oc_str8 runtime_url = oc_str8_pushf(&arena, "/releases/latest/download/%.*s", 
+			oc_str8_printf(RUNTIME_FILENAME));
+		runtime_url = oc_path_append(&arena, repo_url_base, runtime_url);
+		oc_str8 runtime_filepath = oc_path_append(&arena, temp_dir, RUNTIME_FILENAME);
 
-	curl_code = download_file(curl, runtime_url, runtime_filepath);
-	if (curl_code != CURLE_OK) {
-		fprintf(stderr, "error: failed to download file %s: %s\n", 
-			runtime_url.ptr, curl_last_error(curl_code));
-		return 1;
+		curl_code = download_file(curl, runtime_url, runtime_filepath);
+		if (curl_code != CURLE_OK) {
+			fprintf(stderr, "error: failed to download file %s: %s\n", 
+				runtime_url.ptr, curl_last_error(curl_code));
+			return 1;
+		}
+
+		if (!tarball_extract(runtime_filepath, temp_dir)) {
+			fprintf(stderr, "error: failed to extract files from %s\n", runtime_filepath.ptr);
+			return 1;
+		}
+
+		oc_str8 orca_exe = oc_path_append(&arena, temp_dir, RUNTIME_EXE_PATH);
+		oc_str8 orca_dll = oc_path_append(&arena, temp_dir, ORCA_DLL_PATH);
+		TRY(oc_sys_move(orca_exe, bin_dir));
+		TRY(oc_sys_move(orca_dll, bin_dir));
 	}
 
-	if (!tarball_extract(runtime_filepath, temp_dir)) {
-		fprintf(stderr, "error: failed to extract files from %s\n", runtime_filepath.ptr);
-		return 1;
+	//-----------------------------------------------------------------------------
+	// record checksum and update current_version file
+	//-----------------------------------------------------------------------------
+
+	// TODO(shaw): generate a checksum of the version directory and write to all_versions.txt
+	/*
+	{
+		oc_str8 all_versions = oc_path_append(&arena, orca_dir, OC_STR8("all_versions.txt"));
+		oc_file_open_flags open_flags = oc_sys_exists(all_versions) 
+			? OC_FILE_OPEN_APPEND : OC_FILE_OPEN_CREATE;
+		oc_file file = oc_file_open(all_versions, OC_FILE_ACCESS_WRITE, open_flags);
+		if (!oc_file_is_nil(file)) {
+			oc_file_seek(file, 0, OC_FILE_SEEK_END);
+			oc_str8 checksum = get_directory_checksum(version_dir);
+			oc_str8 version_and_checksum = oc_str8_pushf(&arena, "%.*s %.*s\n", 
+					oc_str8_printf(version), oc_str8_printf(checksum));
+			oc_file_write(file, version_and_checksum.len, version_and_checksum.ptr);
+		} else {
+			fprintf(stderr, "error: failed to open file %s\n", all_versions.ptr);
+		}
+		oc_file_close(file);
 	}
+	*/
+
+	{
+		oc_str8 current_version = oc_path_append(&arena, orca_dir, OC_STR8("current_version.txt"));
+		oc_file file = oc_file_open(current_version, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
+		if (!oc_file_is_nil(file)) {
+			oc_file_write(file, version.len, version.ptr);
+		} else {
+			fprintf(stderr, "error: failed to open file %s\n", current_version.ptr);
+		}
+		oc_file_close(file);
+	}
+
+	TRY(oc_sys_rmdir(temp_dir));
 
 	// NOTE(shaw): assuming that the cli tool will always just call update and
 	// exit so no cleanup is done, i.e. curl_easy_cleanup(curl)
