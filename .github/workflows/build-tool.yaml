@@ -35,15 +35,16 @@ jobs:
 
       - name: Build
         run: ./orcadev build-tool
-      
+
+        # NOTE: tar is needed to maintain executable file permissions
       - name: Tar
         run: |
-          cp build/bin/orca orca-mac-x64
-          tar -cf orca-mac-x64.tar orca-mac-x64
+          cp build/bin/orca orca
+          tar -cf orca-mac-x64.tar orca
 
       - uses: actions/upload-artifact@v4
         with:
-          name: orca-mac-x64.tar
+          name: orca-mac-x64
           path: orca-mac-x64.tar
 
   build-macos-arm64:
@@ -58,14 +59,15 @@ jobs:
       - name: Build
         run: ./orcadev build-tool
       
+        # NOTE: tar is needed to maintain executable file permissions
       - name: Tar
         run: |
-          cp build/bin/orca orca-mac-arm64
-          tar -cf orca-mac-arm64.tar orca-mac-arm64
+          cp build/bin/orca orca
+          tar -cf orca-mac-arm64.tar orca
 
       - uses: actions/upload-artifact@v4
         with:
-          name: orca-mac-arm64.tar
+          name: orca-mac-arm64
           path: orca-mac-arm64.tar
   
   mac-make-universal:
@@ -77,16 +79,18 @@ jobs:
       
       - uses: actions/download-artifact@v4
         with:
-          name: orca-mac-x64.tar
+          name: orca-mac-x64
 
       - uses: actions/download-artifact@v4
         with:
-          name: orca-mac-arm64.tar
+          name: orca-mac-arm64
       
       - name: Untar
         run: |
           tar -xf orca-mac-x64.tar
+          mv orca orca-mac-x64
           tar -xf orca-mac-arm64.tar
+          mv orca orca-mac-arm64
       
       - name: Make universal binary
         run: |
@@ -96,9 +100,9 @@ jobs:
       
       - name: Tar
         run: |
-          tar -cf orca.tar orca
+          tar -cf orca-universal.tar orca
 
       - uses: actions/upload-artifact@v4
         with:
-          name: orca-mac.tar
-          path: orca.tar
+          name: orca-universal
+          path: orca-universal.tar
