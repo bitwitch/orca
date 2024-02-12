@@ -1,7 +1,10 @@
 name: build-tool
 
-# TODO: scope more tightly or something
-on: [push, workflow_call]
+on: 
+  workflow_call:
+  push:
+    branches:
+      - main
 
 jobs:
   build-win:
