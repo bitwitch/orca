@@ -519,11 +519,15 @@ def download_angle():
     shutil.copytree(f"scripts/files/angle/", "src/ext/angle", dirs_exist_ok=True)
 
 def build_libcurl():
-    print("Building libcurl...")
-
     if platform.system() == "Windows":
-        with pushd("src/ext/curl/winbuild"):
-            subprocess.run("nmake /f Makefile.vc mode=static MACHINE=x64", check=True)
+        if not os.path.exists("src/ext/curl/builds/static/"):
+            print("Building libcurl...")
+            with pushd("src/ext/curl/winbuild"):
+                subprocess.run("nmake /f Makefile.vc mode=static MACHINE=x64", check=True)
+            shutil.copytree(
+                "src/ext/curl/builds/libcurl-vc-x64-release-static-ipv6-sspi-schannel/",
+                "src/ext/curl/builds/static",
+                dirs_exist_ok=True)
 
     elif platform.system() == "Darwin":
         assert 0, "build_libcurl not implemented on mac"
@@ -533,12 +537,12 @@ def build_libcurl():
         exit(1)
 
 def build_zlib():
-    print("Building zlib...")
-
     if platform.system() == "Windows":
-        os.makedirs("src/ext/zlib/build", exist_ok=True)
-        with pushd("src/ext/zlib/build"):
-            subprocess.run("nmake /f ../win32/Makefile.msc TOP=.. zlib.lib", check=True)
+        if not os.path.exists("src/ext/zlib/build"):
+            print("Building zlib...")
+            os.makedirs("src/ext/zlib/build", exist_ok=True)
+            with pushd("src/ext/zlib/build"):
+                subprocess.run("nmake /f ../win32/Makefile.msc TOP=.. zlib.lib", check=True)
 
     elif platform.system() == "Darwin":
         assert 0, "build_zlib not implemented on mac"
@@ -549,11 +553,9 @@ def build_zlib():
 
 
 def build_tool_win(githash, outname):
-    curl_dir = "../ext/curl/builds/libcurl-vc-x64-release-static-ipv6-sspi-schannel"
-
     includes = [ 
         "/I", "..",
-        "/I", f"{curl_dir}/include",
+        "/I", "../ext/curl/builds/static/include",
         "/I", "../ext/zlib",
         "/I", "../ext/microtar"
     ]
@@ -569,7 +571,7 @@ def build_tool_win(githash, outname):
         "normaliz.lib", 
         "ws2_32.lib", 
         "wldap32.lib",
-        f"/LIBPATH:{curl_dir}/lib",
+        "/LIBPATH:../ext/curl/builds/static/lib",
         "libcurl_a.lib",
 
         "/LIBPATH:../ext/zlib/build",
