@@ -88,7 +88,6 @@ int update(int argc, char** argv)
 		return 1;
 	}
 
-
 	// TODO(shaw): use main orca repo instead of my fork
 	oc_str8 repo_url_base = OC_STR8("https://github.com/bitwitch/orca");
 
@@ -102,16 +101,17 @@ int update(int argc, char** argv)
 	curl_easy_setopt(curl, CURLOPT_URL, latest_url.ptr);
 	CURLcode curl_code = curl_easy_perform(curl);
 	if (curl_code != CURLE_OK) {
-		fprintf(stderr, "error: curl request failed: %s\n", curl_easy_strerror(curl_code));
+		fprintf(stderr, "error: failed to fetch latest version: %s\n", curl_easy_strerror(curl_code));
 		return 1;
 	}
 
-	char *final_url = NULL;
-	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &final_url);
-	oc_str8 version = oc_path_slice_filename(OC_STR8(final_url));
+	char *final_url_cstr = NULL;
+	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &final_url_cstr);
+	oc_str8 final_url = oc_str8_push_cstring(&arena, final_url_cstr);
+
+	oc_str8 version = oc_path_slice_filename(final_url);
 	oc_str8 exe_path = oc_path_executable(&arena);
 	oc_str8 orca_dir = oc_path_slice_directory(exe_path);
-
     oc_str8 version_dir = oc_path_append(&arena, orca_dir, version);
 
 	if (oc_sys_exists(version_dir)) {
@@ -159,7 +159,6 @@ int update(int argc, char** argv)
 	//-----------------------------------------------------------------------------
 	// record checksum and update current_version file
 	//-----------------------------------------------------------------------------
-
 	{
 		oc_str8 checksum = {0};
 		oc_str8 checksum_path = oc_path_append(&arena, temp_dir, OC_STR8("sha1.sum"));
@@ -172,7 +171,7 @@ int update(int argc, char** argv)
 		oc_file_close(checksum_file);
 
 		if (checksum.len) {
-			oc_str8 all_versions = oc_path_append(&arena, orca_dir, OC_STR8("all_versions.txt"));
+			oc_str8 all_versions = oc_path_append(&arena, orca_dir, OC_STR8("all_versions"));
 			oc_file_open_flags open_flags = oc_sys_exists(all_versions) 
 				? OC_FILE_OPEN_APPEND : OC_FILE_OPEN_CREATE;
 			oc_file file = oc_file_open(all_versions, OC_FILE_ACCESS_WRITE, open_flags);
@@ -189,7 +188,7 @@ int update(int argc, char** argv)
 	}
 
 	{
-		oc_str8 current_version = oc_path_append(&arena, orca_dir, OC_STR8("current_version.txt"));
+		oc_str8 current_version = oc_path_append(&arena, orca_dir, OC_STR8("current_version"));
 		oc_file file = oc_file_open(current_version, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
 		if (!oc_file_is_nil(file)) {
 			oc_file_write(file, version.len, version.ptr);
@@ -199,7 +198,7 @@ int update(int argc, char** argv)
 		oc_file_close(file);
 	}
 
-	// TRY(oc_sys_rmdir(temp_dir));
+	TRY(oc_sys_rmdir(temp_dir));
 
 	// NOTE(shaw): assuming that the cli tool will always just call update and
 	// exit so no cleanup is done, i.e. curl_easy_cleanup(curl)
