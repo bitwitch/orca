@@ -6,6 +6,7 @@ import urllib.request
 import shutil
 import subprocess
 from zipfile import ZipFile
+import tarfile
 
 from . import checksum
 from .bindgen import bindgen
@@ -517,11 +518,43 @@ def download_angle():
 
     shutil.copytree(f"scripts/files/angle/", "src/ext/angle", dirs_exist_ok=True)
 
+def build_libcurl():
+    print("Building libcurl...")
+
+    if platform.system() == "Windows":
+        with pushd("src/ext/curl/winbuild"):
+            subprocess.run("nmake /f Makefile.vc mode=static MACHINE=x64", check=True)
+
+    elif platform.system() == "Darwin":
+        assert 0, "build_libcurl not implemented on mac"
+
+    else:
+        log_error(f"can't build libcurl for unknown platform '{platform.system()}'")
+        exit(1)
+
+def build_zlib():
+    print("Building zlib...")
+
+    if platform.system() == "Windows":
+        os.makedirs("src/ext/zlib/build", exist_ok=True)
+        with pushd("src/ext/zlib/build"):
+            subprocess.run("nmake /f ../win32/Makefile.msc TOP=.. zlib.lib", check=True)
+
+    elif platform.system() == "Darwin":
+        assert 0, "build_zlib not implemented on mac"
+
+    else:
+        log_error(f"can't build zlib for unknown platform '{platform.system()}'")
+        exit(1)
+
+
 def build_tool_win(githash, outname):
+    curl_dir = "../ext/curl/builds/libcurl-vc-x64-release-static-ipv6-sspi-schannel"
+
     includes = [ 
         "/I", "..",
-        "/I", "../ext/curl/include",
-        "/I", "../ext/zlib/include",
+        "/I", f"{curl_dir}/include",
+        "/I", "../ext/zlib",
         "/I", "../ext/microtar"
     ]
 
@@ -536,10 +569,10 @@ def build_tool_win(githash, outname):
         "normaliz.lib", 
         "ws2_32.lib", 
         "wldap32.lib",
-        "/LIBPATH:../ext/curl/lib",
+        f"/LIBPATH:{curl_dir}/lib",
         "libcurl_a.lib",
 
-        "/LIBPATH:../ext/zlib/lib",
+        "/LIBPATH:../ext/zlib/build",
         "zlib.lib",
     ]
 
@@ -595,7 +628,12 @@ def build_tool_mac(githash, outname):
         f.write("]")
 
 def build_tool(args):
+    print("Building Orca CLI tool...")
+
     ensure_programs()
+    build_libcurl()
+    build_zlib()
+
     os.makedirs("build/bin", exist_ok=True)
 
     with pushd("src/tool"):
