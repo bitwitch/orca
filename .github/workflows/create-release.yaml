@@ -31,30 +31,63 @@ jobs:
             path: artifacts
             merge-multiple: true
 
+        - name: Package CLI Tool
+          run: |
+            mkdir releases
+            cp artifacts/orca.exe releases
+            #cp artifacts/orca-mac-universal.tar releases
+
         - name: Package Windows Release
           run: |
-            ls -R artifacts
-            mkdir -p releases/orca-${{ github.ref_name }}-win/bin
-            mkdir -p releases/orca-${{ github.ref_name }}-win/orca-libc
-            mkdir -p releases/orca-${{ github.ref_name }}-win/resources
-
-            # copy over source code
-            cp -r repo/src releases/orca-${{ github.ref_name }}-win
-
-            # copy over fonts
-            cp repo/resources/* releases/orca-${{ github.ref_name }}-win/resources
-
-            # copy over runtime
+            mkdir -p orca-${{ github.ref_name }}-win/bin
+            mkdir -p orca-${{ github.ref_name }}-win/orca-libc
+            mkdir -p orca-${{ github.ref_name }}-win/resources
+            # gather source code
+            cp -r repo/src orca-${{ github.ref_name }}-win
+            # gather fonts
+            cp repo/resources/* orca-${{ github.ref_name }}-win/resources
+            # gather runtime
             cd artifacts
             tar -xzf orca-runtime-win.tar.gz
             cd ..
-            cp artifacts/orca-runtime-win/bin/orca_runtime.exe artifacts/orca-runtime-win/bin/orca.dll releases/orca-${{ github.ref_name }}-win/bin
+            cp artifacts/orca-runtime-win/bin/orca_runtime.exe orca-${{ github.ref_name }}-win/bin
+            cp artifacts/orca-runtime-win/bin/orca.dll orca-${{ github.ref_name }}-win/bin
 
-            # TODO(shaw): copy over orca-libc once it is build by ci
+            # TODO(shaw): gather orca-libc once it is build by ci
 
             # generate checksum file
-            cd releases/orca-${{ github.ref_name }}-win 
+            cd orca-${{ github.ref_name }}-win 
             find . -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum > sha1.sum
+            cd ..
+            # create release tarball
+            tar -czf orca-${{ github.ref_name }}-win.tar.gz orca-${{ github.ref_name }}-win
+            mv orca-${{ github.ref_name }}-win.tar.gz releases
+
+        - name: Package Mac x64 Release
+          run: |
+            mkdir -p orca-${{ github.ref_name }}-mac-x64/bin
+            mkdir -p orca-${{ github.ref_name }}-mac-x64/orca-libc
+            mkdir -p orca-${{ github.ref_name }}-mac-x64/resources
+            # gather source code
+            cp -r repo/src orca-${{ github.ref_name }}-mac-x64
+            # gather fonts
+            cp repo/resources/* orca-${{ github.ref_name }}-mac-x64/resources
+            # gather runtime
+            cd artifacts
+            tar -xzf orca-runtime-mac-x64.tar.gz
+            cd ..
+            cp artifacts/orca-runtime-mac-x64/bin/orca_runtime  orca-${{ github.ref_name }}-mac-x64/bin
+            cp artifacts/orca-runtime-mac-x64/bin/liborca.dylib orca-${{ github.ref_name }}-mac-x64/bin
+
+            # TODO(shaw): gather orca-libc once it is build by ci
+
+            # generate checksum file
+            cd orca-${{ github.ref_name }}-mac-x64 
+            find . -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum > sha1.sum
+            cd ..
+            # create release tarball
+            tar -czf orca-${{ github.ref_name }}-mac-x64.tar.gz orca-${{ github.ref_name }}-mac-x64
+            mv orca-${{ github.ref_name }}-mac-x64.tar.gz releases
 
         - uses: ncipollo/release-action@v1
           with:
