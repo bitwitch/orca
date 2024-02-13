@@ -29,6 +29,7 @@ jobs:
           with:
             # when name is not specified, all artifacts from this run will be downloaded
             path: artifacts
+            merge-multiple: true
 
         - name: Package Windows Release
           run: |
@@ -44,7 +45,9 @@ jobs:
             cp repo/resources/* releases/orca-${{ github.ref_name }}-win/resources
 
             # copy over runtime
-            tar -xzf artifacts/orca-runtime-win.tar.gz
+            cd artifacts
+            tar -xzf orca-runtime-win.tar.gz
+            cd ..
             cp artifacts/orca-runtime-win/bin/orca_runtime.exe artifacts/orca-runtime-win/bin/orca.dll releases/orca-${{ github.ref_name }}-win/bin
 
             # TODO(shaw): copy over orca-libc once it is build by ci
