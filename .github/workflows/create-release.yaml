@@ -31,27 +31,83 @@ jobs:
             path: artifacts
             merge-multiple: true
 
+        - name: Package CLI Tool
+          run: |
+            mkdir releases
+            cp artifacts/orca.exe releases
+            #cp artifacts/orca-mac-universal.tar releases
+
         - name: Package Windows Release
           run: |
-            mkdir -p releases/orca-${{ github.refname }}-win/bin
-            mkdir -p releases/orca-${{ github.refname }}-win/orca-libc
-            mkdir -p releases/orca-${{ github.refname }}-win/resources
+            mkdir -p orca-win/bin
+            mkdir -p orca-win/orca-libc
+            mkdir -p orca-win/resources
+            # gather source code
+            cp -r repo/src orca-win
+            # gather fonts
+            cp repo/resources/* orca-win/resources
+            # gather runtime
+            cd artifacts
+            tar -xzf orca-runtime-win.tar.gz
+            cd ..
+            cp artifacts/orca-runtime-win/bin/orca_runtime.exe orca-win/bin
+            cp artifacts/orca-runtime-win/bin/orca.dll orca-win/bin
 
-            # copy over source code
-            cp -r repo/src releases/orca-${{ github.refname }}-win
-
-            # copy over fonts
-            cp repo/resources/* releases/orca-${{ github.refname }}-win/resources
-
-            # copy over runtime
-            tar -xzf artifacts/orca-runtime-win.tar.gz
-            cp artifacts/orca-runtime-win/bin/orca_runtime.exe artifacts/orca-runtime-win/bin/orca.dll releases/orca-${{ github.refname }}-win/bin
-
-            # TODO(shaw): copy over orca-libc once it is build by ci
+            # TODO(shaw): gather orca-libc once it is built by ci
 
             # generate checksum file
-            cd releases/orca-${{ github.refname }}-win 
-            find . -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum > sha1.sum
+            find orca-win -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum > sha1.sum
+            # create release tarball
+            tar -czf orca-win.tar.gz orca-win sha1.sum
+            mv orca-win.tar.gz releases
+
+        - name: Package Mac x64 Release
+          run: |
+            mkdir -p orca-mac-x64/bin
+            mkdir -p orca-mac-x64/orca-libc
+            mkdir -p orca-mac-x64/resources
+            # gather source code
+            cp -r repo/src orca-mac-x64
+            # gather fonts
+            cp repo/resources/* orca-mac-x64/resources
+            # gather runtime
+            cd artifacts
+            tar -xzf orca-runtime-mac-x64.tar.gz
+            cd ..
+            cp artifacts/orca-runtime-mac-x64/bin/orca_runtime  orca-mac-x64/bin
+            cp artifacts/orca-runtime-mac-x64/bin/liborca.dylib orca-mac-x64/bin
+
+            # TODO(shaw): gather orca-libc once it is built by ci
+
+            # generate checksum file
+            find orca-mac-x64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum > sha1.sum
+            # create release tarball
+            tar -czf orca-mac-x64.tar.gz orca-mac-x64 sha1.sum
+            mv orca-mac-x64.tar.gz releases
+
+        #- name: Package Mac arm64 Release
+          #run: |
+            #mkdir -p orca-mac-arm64/bin
+            #mkdir -p orca-mac-arm64/orca-libc
+            #mkdir -p orca-mac-arm64/resources
+            ## gather source code
+            #cp -r repo/src orca-mac-arm64
+            ## gather fonts
+            #cp repo/resources/* orca-mac-arm64/resources
+            ## gather runtime
+            #cd artifacts
+            #tar -xzf orca-runtime-mac-arm64.tar.gz
+            #cd ..
+            #cp artifacts/orca-runtime-mac-arm64/bin/orca_runtime  orca-mac-arm64/bin
+            #cp artifacts/orca-runtime-mac-arm64/bin/liborca.dylib orca-mac-arm64/bin
+
+            ## TODO(shaw): gather orca-libc once it is built by ci
+
+            ## generate checksum file
+            #find orca-mac-arm64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum > sha1.sum
+            ## create release tarball
+            #tar -czf orca-mac-arm64.tar.gz orca-mac-arm64 sha1.sum
+            #mv orca-mac-arm64.tar.gz releases
 
         - uses: ncipollo/release-action@v1
           with:
