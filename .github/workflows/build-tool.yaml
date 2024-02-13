@@ -103,9 +103,9 @@ jobs:
       
       #- name: Tar
         #run: |
-          #tar -cf orca-universal.tar orca
+          #tar -cf orca-mac-universal.tar orca
 
       #- uses: actions/upload-artifact@v4
         #with:
-          #name: orca-universal
-          #path: orca-universal.tar
+          #name: orca-mac-universal
+          #path: orca-mac-universal.tar
