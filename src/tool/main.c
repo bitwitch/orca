@@ -16,14 +16,13 @@
 
 #include "orca.c"
 #include "util.c"
+#include "version.c"
 #include "sdk_path.c"
 #include "bundle.c"
 #include "microtar.c"
 #include "tarball.c"
 #include "update.c"
 #include "system.c"
-
-int version(int argc, char** argv);
 
 int main(int argc, char** argv)
 {
@@ -94,21 +93,3 @@ int main(int argc, char** argv)
     return 0;
 }
 
-#ifndef ORCA_TOOL_VERSION
-    #define ORCA_TOOL_VERSION unknown
-#endif
-
-// I love C so much
-#define _TOSTRING(x) #x
-#define TOSTRING(x) _TOSTRING(x)
-
-int version(int argc, char** argv)
-{
-    fprintf(stderr, "Orca CLI tool version: ");
-    printf(TOSTRING(ORCA_TOOL_VERSION));
-    fprintf(stderr, "\n");
-
-    // TODO: Print runtime / install version info
-
-    return 0;
-}
