@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 
-#include "curl.h"
+#include "curl/curl.h"
 #include "flag.h"
 #include "util.h"
 #include "tarball.h"
