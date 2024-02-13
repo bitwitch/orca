@@ -29,10 +29,10 @@ jobs:
           with:
             # when name is not specified, all artifacts from this run will be downloaded
             path: artifacts
-            merge-multiple: true
 
         - name: Package Windows Release
           run: |
+            ls -R artifacts
             mkdir -p releases/orca-${{ github.ref_name }}-win/bin
             mkdir -p releases/orca-${{ github.ref_name }}-win/orca-libc
             mkdir -p releases/orca-${{ github.ref_name }}-win/resources
