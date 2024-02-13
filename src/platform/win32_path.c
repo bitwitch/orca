@@ -35,4 +35,17 @@ oc_str8 oc_path_executable(oc_arena* arena)
     return (path);
 }
 
-oc_str8 oc_path_canonical(oc_arena* arena, oc_str8 path); //TODO
+oc_str8 oc_path_canonical(oc_arena* arena, oc_str8 path)
+{
+	oc_arena_scope scratch = oc_scratch_begin_next(arena);
+	char* path_cstr = oc_str8_to_cstring(scratch.arena, path);
+
+	char path_buf[_MAX_PATH];
+	char *full_path = _fullpath(path_buf, path_cstr, _MAX_PATH);
+
+	oc_str8 result = oc_str8_push_cstring(arena, full_path);
+
+	oc_scratch_end(scratch);
+
+	return (result);
+}
