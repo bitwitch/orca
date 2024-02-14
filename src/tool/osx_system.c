@@ -216,7 +216,7 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst)
 		if (!oc_sys_copytree(src, dst)) {
 			result = false;
 		}
-		if (result && !os_sys_rmdir(src)) {
+		if (result && !oc_sys_rmdir(src)) {
 			result = false;
 		}
 	} else {

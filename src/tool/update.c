@@ -34,7 +34,7 @@ static size_t curl_callback_write_to_file(char *data, size_t size, size_t nmemb,
 
 static char curl_errbuf[CURL_ERROR_SIZE]; // buffer for last curl error message 
 
-static char *curl_last_error(CURLcode code) 
+static const char *curl_last_error(CURLcode code) 
 {
 	// if there is no message in curl_errbuf, then fall back to the less
 	// detailed error message from the CURLcode

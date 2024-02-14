@@ -530,22 +530,45 @@ def build_libcurl():
                 dirs_exist_ok=True)
 
     elif platform.system() == "Darwin":
-        assert 0, "build_libcurl not implemented on mac"
+        if not os.path.exists("src/ext/curl/builds/static/"):
+            print("Building libcurl...")
+            os.makedirs("src/ext/curl/builds", exist_ok=True)
+            with pushd("src/ext/curl/builds"):
+                prefix = os.path.join(os.getcwd(), "static")
+                subprocess.run([
+                    "sh", "../configure",
+                    "--with-secure-transport", 
+                    "--disable-shared", 
+                    "--disable-ldap", "--disable-ldaps", "--disable-aws",
+                    "--disable-manual", "--disable-debug",
+                    "--without-brotli", "--without-zstd", "--without-libpsl",
+                    "--without-librtmp", "--without-zlib", "--without-nghttp2", 
+                    "--without-libidn2",
+                    f"--prefix={prefix}",
+                ] , check=True)
+                subprocess.run("make", check=True)
+                subprocess.run(["make", "install"], check=True)
 
     else:
         log_error(f"can't build libcurl for unknown platform '{platform.system()}'")
         exit(1)
 
+
 def build_zlib():
     if platform.system() == "Windows":
-        if not os.path.exists("src/ext/zlib/build"):
+        if not os.path.exists("src/ext/zlib/build/zlib.lib"):
             print("Building zlib...")
             os.makedirs("src/ext/zlib/build", exist_ok=True)
             with pushd("src/ext/zlib/build"):
                 subprocess.run("nmake /f ../win32/Makefile.msc TOP=.. zlib.lib", check=True)
 
     elif platform.system() == "Darwin":
-        assert 0, "build_zlib not implemented on mac"
+        if not os.path.exists("src/ext/zlib/build/libz.a"):
+            print("Building zlib...")
+            os.makedirs("src/ext/zlib/build", exist_ok=True)
+            with pushd("src/ext/zlib/build"):
+                subprocess.run(["sh", "../configure", "--static"], check=True)
+                subprocess.run(["make", "libz.a"], check=True)
 
     else:
         log_error(f"can't build zlib for unknown platform '{platform.system()}'")
@@ -597,24 +620,36 @@ def build_tool_win(githash, outname):
     ], check=True)
 
 def build_tool_mac(githash, outname):
-    outname = "orca"
     includes = [ 
         "-I", "..",
-        "-I", "../ext/curl/include",
-        "-I", "../ext/zlib/include",
+        "-I", "../ext/curl/builds/static/include",
+        "-I", "../ext/zlib",
         "-I", "../ext/microtar"
     ]
 
-    # TODO(shaw): fix build on mac, needs curl and zlib
-    libs = ["-framework", "Cocoa"]
+    libs = [
+        "-framework", "Cocoa",
 
+        # libs needed by curl
+        "-framework", "SystemConfiguration",
+        "-framework", "CoreFoundation", 
+        "-framework", "CoreServices",
+        "-framework", "SystemConfiguration",
+        "-framework", "Security",
+        "-L../ext/curl/builds/static/lib", "-lcurl",
+
+        "-L../ext/zlib/build", "-lz",
+    ]
     subprocess.run([
         "clang",
+        "-mmacos-version-min=10.15.4",
         "-std=c11",
-        "-g", #"-gcodeview", #output debug info
+        "-g", "-O2",
         *includes,
         "-D", "FLAG_IMPLEMENTATION",
         "-D", "OC_NO_APP_LAYER",
+        "-D", "OC_BUILD_DLL",
+        "-D", "CURL_STATICLIB",
         *libs,
         "-MJ", "build/main.json",
         "-o", f"build/bin/{outname}",
