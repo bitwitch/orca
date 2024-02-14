@@ -22,7 +22,6 @@ jobs:
           with: 
             path: repo
             sparse-checkout: |
-              src
               resources
 
         - uses: actions/download-artifact@v4
@@ -42,8 +41,7 @@ jobs:
             mkdir -p orca-win/bin
             mkdir -p orca-win/orca-libc
             mkdir -p orca-win/resources
-            # gather source code
-            cp -r repo/src orca-win
+            mkdir -p orca-win/src
             # gather fonts
             cp repo/resources/* orca-win/resources
             # gather runtime
@@ -52,6 +50,8 @@ jobs:
             cd ..
             cp artifacts/orca-runtime-win/bin/orca_runtime.exe orca-win/bin
             cp artifacts/orca-runtime-win/bin/orca.dll orca-win/bin
+            # gather source code
+            cp -r artifacts/src-win/* orca-win/src
 
             # TODO(shaw): gather orca-libc once it is built by ci
 
@@ -66,8 +66,7 @@ jobs:
             mkdir -p orca-mac-x64/bin
             mkdir -p orca-mac-x64/orca-libc
             mkdir -p orca-mac-x64/resources
-            # gather source code
-            cp -r repo/src orca-mac-x64
+            mkdir -p orca-mac-x64/src
             # gather fonts
             cp repo/resources/* orca-mac-x64/resources
             # gather runtime
@@ -76,6 +75,8 @@ jobs:
             cd ..
             cp artifacts/orca-runtime-mac-x64/bin/orca_runtime  orca-mac-x64/bin
             cp artifacts/orca-runtime-mac-x64/bin/liborca.dylib orca-mac-x64/bin
+            # gather source code
+            cp -r artifacts/src-mac-x64/* orca-mac-x64/src
 
             # TODO(shaw): gather orca-libc once it is built by ci
 
@@ -90,8 +91,7 @@ jobs:
             #mkdir -p orca-mac-arm64/bin
             #mkdir -p orca-mac-arm64/orca-libc
             #mkdir -p orca-mac-arm64/resources
-            ## gather source code
-            #cp -r repo/src orca-mac-arm64
+            #mkdir -p orca-mac-arm64/src
             ## gather fonts
             #cp repo/resources/* orca-mac-arm64/resources
             ## gather runtime
@@ -100,6 +100,8 @@ jobs:
             #cd ..
             #cp artifacts/orca-runtime-mac-arm64/bin/orca_runtime  orca-mac-arm64/bin
             #cp artifacts/orca-runtime-mac-arm64/bin/liborca.dylib orca-mac-arm64/bin
+            ## gather source code
+            #cp -r artifacts/src-mac-arm64/* orca-mac-arm64/src
 
             ## TODO(shaw): gather orca-libc once it is built by ci
 

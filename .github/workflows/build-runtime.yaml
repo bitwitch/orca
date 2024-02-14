@@ -26,7 +26,8 @@ jobs:
         shell: cmd
         run: |
           rename build orca-runtime-win
-          tar -czf orca-runtime-win.tar.gz orca-runtime-win
+          rename src src-win
+          tar -czf orca-runtime-win.tar.gz orca-runtime-win src-win
 
       - uses: actions/upload-artifact@v4
         with:
@@ -46,7 +47,8 @@ jobs:
         run: |
           ./orcadev build-runtime
           mv build orca-runtime-mac-x64
-          tar -c -z -f orca-runtime-mac-x64.tar.gz orca-runtime-mac-x64
+          mv src src-mac-x64
+          tar -c -z -f orca-runtime-mac-x64.tar.gz orca-runtime-mac-x64 src-mac-x64
 
       - uses: actions/upload-artifact@v4
         with:
@@ -66,7 +68,8 @@ jobs:
         #run: |
           #./orcadev build-runtime
           #mv build orca-runtime-mac-arm64
-          #tar -c -z -f orca-runtime-mac-arm64.tar.gz orca-runtime-mac-arm64
+          #mv src src-mac-arm64
+          #tar -c -z -f orca-runtime-mac-arm64.tar.gz orca-runtime-mac-arm64 src-mac-arm64
 
       #- uses: actions/upload-artifact@v4
         #with:
