@@ -17,7 +17,6 @@
 
 #define CHUNK_SIZE 262144
 
-// TODO(shaw): update callbacks to use oc_file type and oc_file i/o functions
 static int custom_file_write(mtar_t *tar, const void *data, unsigned size) {
 	size_t res = fwrite(data, 1, size, tar->stream);
 	return (res == size) ? MTAR_ESUCCESS : MTAR_EWRITEFAIL;
@@ -39,9 +38,10 @@ static int custom_file_close(mtar_t *tar) {
 }
 
 int gzip_decompress(gzFile in_file, FILE *out_file) {
-	char out[CHUNK_SIZE];
+	oc_arena_scope scratch = oc_scratch_begin();
+	char *out = oc_arena_push(scratch.arena, CHUNK_SIZE);
 	int uncompressed_bytes = 0;
-	size_t bytes_written = 0;
+	int bytes_written = 0;
 	int result = Z_OK;
 
 	for (;;) {
@@ -51,7 +51,7 @@ int gzip_decompress(gzFile in_file, FILE *out_file) {
 			break;
 		} 
 
-		bytes_written = fwrite(out, 1, uncompressed_bytes, out_file);
+		bytes_written = (int)fwrite(out, 1, uncompressed_bytes, out_file);
 		if (bytes_written != uncompressed_bytes || ferror(out_file)) {
 			result = Z_ERRNO;
 			break;
@@ -61,10 +61,10 @@ int gzip_decompress(gzFile in_file, FILE *out_file) {
 			break;
 		}
 	} 
+	oc_scratch_end(scratch);
 	return result;
 }
 
-// TODO(shaw): use oc_file here
 int untar(FILE *file, oc_str8 out_dir) {
 	if (fseek(file, 0, SEEK_SET) != 0) {
 		return MTAR_ESEEKFAIL;
