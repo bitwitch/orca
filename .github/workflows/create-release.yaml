@@ -34,6 +34,7 @@ jobs:
           run: |
             mkdir releases
             cp artifacts/orca.exe releases
+            cp artifacts/orca-mac-x64.tar releases
             #cp artifacts/orca-mac-universal.tar releases
 
         - name: Package Windows Release
