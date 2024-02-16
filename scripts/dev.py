@@ -541,6 +541,7 @@ def build_libcurl():
                     "--disable-shared", 
                     "--disable-ldap", "--disable-ldaps", "--disable-aws",
                     "--disable-manual", "--disable-debug",
+                    "--disable-dependency-tracking",
                     "--without-brotli", "--without-zstd", "--without-libpsl",
                     "--without-librtmp", "--without-zlib", "--without-nghttp2", 
                     "--without-libidn2",
