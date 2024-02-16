@@ -18,7 +18,7 @@ int winBundle(
     oc_str8 name,
     oc_str8 icon,
     oc_str8 version,
-    oc_str8_list resources,
+    oc_str8_list resource_dirs,
     oc_str8 outDir,
     oc_str8 orcaDir,
     oc_str8 module);
@@ -28,7 +28,7 @@ int macBundle(
     oc_str8 name,
     oc_str8 icon,
     oc_str8 version,
-    oc_str8_list resources,
+    oc_str8_list resource_dirs,
     oc_str8 outDir,
     oc_str8 orcaDir,
     oc_str8 module);
@@ -48,10 +48,10 @@ int bundle(int argc, char** argv)
     char** version = flag_str(&c, NULL, "version", "0.0.0", "a version number to embed in the application bundle");
     oc_str8_list* resource_dirs = flag_strs(&c, "d", "resource-dir", "copy the contents of a folder to the resource directory");
     char** outDir = flag_str(&c, "C", "out-dir", NULL, "where to place the final application bundle (defaults to the current directory)");
-    char** orcaDir = flag_str(&c, "O", "orca-dir", ".", NULL);
-    // TODO: mtl-enable-capture
-
+    char** orcaDir = flag_str(&c, "O", "orca-dir", NULL, "override the system orca directory");
     char** module = flag_pos(&c, "module", "a .wasm file containing the application's wasm module");
+
+    // TODO: mtl-enable-capture
 
     if(!flag_parse(&c, argc, argv))
     {
@@ -71,6 +71,8 @@ int bundle(int argc, char** argv)
         return 1;
     }
 
+	oc_str8 orca_dir_str8 = *orcaDir ? OC_STR8(*orcaDir) : get_current_version_dir(&a);
+
 #if OC_PLATFORM_WINDOWS
     return winBundle(
         &a,
@@ -79,7 +81,7 @@ int bundle(int argc, char** argv)
         OC_STR8(*version),
         *resource_dirs,
         OC_STR8(*outDir),
-        OC_STR8(*orcaDir),
+		orca_dir_str8,
         OC_STR8(*module));
 #elif OC_PLATFORM_MACOS
     return macBundle(
@@ -89,7 +91,7 @@ int bundle(int argc, char** argv)
         OC_STR8(*version),
         *resource_dirs,
         OC_STR8(*outDir),
-        OC_STR8(*orcaDir),
+		orca_dir_str8,
         OC_STR8(*module));
 #else
     #error Can't build the bundle script on this platform!
