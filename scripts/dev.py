@@ -536,7 +536,7 @@ def build_libcurl():
             with pushd("src/ext/curl/builds"):
                 prefix = os.path.join(os.getcwd(), "static")
                 subprocess.run([
-                    "sh", "../configure",
+                    "../configure",
                     "--with-secure-transport", 
                     "--disable-shared", 
                     "--disable-ldap", "--disable-ldaps", "--disable-aws",
@@ -568,7 +568,7 @@ def build_zlib():
             print("Building zlib...")
             os.makedirs("src/ext/zlib/build", exist_ok=True)
             with pushd("src/ext/zlib/build"):
-                subprocess.run(["sh", "../configure", "--static"], check=True)
+                subprocess.run(["../configure", "--static"], check=True)
                 subprocess.run(["make", "libz.a"], check=True)
 
     else:
