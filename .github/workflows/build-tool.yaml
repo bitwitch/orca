@@ -39,16 +39,25 @@ jobs:
       - name: Build
         run: ./orcadev build-tool
 
-        # NOTE: tar is needed to maintain executable file permissions
-      - name: Tar
+      # TODO: delete me
+      # TEMPORARY FOR TESTING WITHOUT ARM RUNNER
+      - name: Make universal binary
         run: |
-          cp build/bin/orca orca
-          tar -cf orca-mac-x64.tar orca
-
+          cp build/bin/orca orca-mac-x64
+          chmod +x orca-mac-x64
+          lipo -create orca-mac-x64 -output orca
+          tar -czf orca-cli-tool-mac-x64.tar.gz orca
+ 
+      # NOTE: tar is needed to maintain executable file permissions
+      #- name: Tar
+        #run: |
+          #cp build/bin/orca orca
+          #tar -czf orca-cli-tool-mac-x64.tar.gz orca
+      
       - uses: actions/upload-artifact@v4
         with:
-          name: orca-mac-x64
-          path: orca-mac-x64.tar
+          name: orca-cli-tool-mac-x64
+          path: orca-cli-tool-mac-x64.tar.gz
 
   #build-macos-arm64:
     #runs-on: [self-hosted, macos]
@@ -66,12 +75,12 @@ jobs:
       #- name: Tar
         #run: |
           #cp build/bin/orca orca
-          #tar -cf orca-mac-arm64.tar orca
+          #tar -czf orca-cli-tool-mac-arm64.tar orca
 
       #- uses: actions/upload-artifact@v4
         #with:
-          #name: orca-mac-arm64
-          #path: orca-mac-arm64.tar
+          #name: orca-cli-tool-mac-arm64
+          #path: orca-cli-tool-mac-arm64.tar
   
   #mac-make-universal:
     #runs-on: macos-latest
@@ -103,9 +112,9 @@ jobs:
       
       #- name: Tar
         #run: |
-          #tar -cf orca-mac-universal.tar orca
+          #tar -czf orca-cli-tool-mac-universal.tar orca
 
       #- uses: actions/upload-artifact@v4
         #with:
-          #name: orca-mac-universal
-          #path: orca-mac-universal.tar
+          #name: orca-cli-tool-mac-universal
+          #path: orca-cli-tool-mac-universal.tar.gz
