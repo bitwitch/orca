@@ -34,8 +34,8 @@ jobs:
           run: |
             mkdir releases
             cp artifacts/orca.exe releases
-            cp artifacts/orca-mac-x64.tar releases
-            #cp artifacts/orca-mac-universal.tar releases
+            cp artifacts/orca-cli-tool-mac-x64.tar.gz releases
+            #cp artifacts/orca-cli-tool-mac-universal.tar.gz releases
 
         - name: Package Windows Release
           run: |
@@ -82,7 +82,7 @@ jobs:
             # TODO(shaw): gather orca-libc once it is built by ci
 
             # generate checksum file
-            find orca-max-x64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
+            find orca-mac-x64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
             # create release tarball
             tar -czf orca-mac-x64.tar.gz orca-mac-x64 sha1.sum
             mv orca-mac-x64.tar.gz releases
@@ -107,7 +107,7 @@ jobs:
             ## TODO(shaw): gather orca-libc once it is built by ci
 
             ## generate checksum file
-            #find orca-max-arm64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
+            #find orca-mac-arm64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
             ## create release tarball
             #tar -czf orca-mac-arm64.tar.gz orca-mac-arm64 sha1.sum
             #mv orca-mac-arm64.tar.gz releases
