@@ -11,9 +11,11 @@
 
 #include "orca.h"
 
+#define OC_SYS_MAX_ERROR 1024
+
 typedef struct
 {
-    oc_str8 msg;
+	char msg[OC_SYS_MAX_ERROR];
     i32 code;
 } oc_sys_err_def;
 
@@ -38,7 +40,7 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst);
             {                                                                                 \
                 code = 1;                                                                     \
             }                                                                                 \
-            fprintf(stderr, "ERROR (code %d): %.*s\n", code, oc_str8_printf(oc_sys_err.msg)); \
+            fprintf(stderr, "ERROR (code %d): %s\n", code, oc_sys_err.msg); \
             return code;                                                                      \
         }                                                                                     \
     }

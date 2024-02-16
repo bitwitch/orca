@@ -78,10 +78,9 @@ bool oc_sys_mkdirs(oc_str8 path)
 
     if(result)
     {
-        oc_sys_err = (oc_sys_err_def){
-            .msg = OC_STR8("failed to create directories"),
-            .code = result,
-        };
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
+			"failed to create directories \"%.*s\"", oc_str8_printf(path));
+        oc_sys_err.code = result;
         return false;
     }
 
@@ -99,10 +98,9 @@ bool oc_sys_rmdir(oc_str8 path)
 
     if(result)
     {
-        oc_sys_err = (oc_sys_err_def){
-            .msg = OC_STR8("failed to remove directory"),
-            .code = result,
-        };
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
+			"failed to remove directory \"%.*s\"", oc_str8_printf(path));
+        oc_sys_err.code = result;
         return false;
     }
 
@@ -113,9 +111,9 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
 {
     if(oc_sys_isdir(src))
     {
-        oc_sys_err = (oc_sys_err_def){
-            .msg = OC_STR8("can only copy files, not directories; use oc_sys_copytree for directories"),
-        };
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
+			"failed to copy file: \"%.*s\" is a directory, oc_sys_copy can only copy files; use oc_sys_copytree for directories", oc_str8_printf(src));
+        oc_sys_err.code = 0;
         return false;
     }
 
@@ -134,10 +132,10 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
 
     if(result)
     {
-        oc_sys_err = (oc_sys_err_def){
-            .msg = OC_STR8("failed to copy file"),
-            .code = result,
-        };
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
+            "failed to copy file \"%.*s\" to \"%.*s\"", 
+			oc_str8_printf(src), oc_str8_printf(dst));
+        oc_sys_err.code = result;
         return false;
     }
 
@@ -148,9 +146,9 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
 {
     if(!oc_sys_isdir(src))
     {
-        oc_sys_err = (oc_sys_err_def){
-            .msg = OC_STR8("can only copy directories, not files; use oc_sys_copy for files"),
-        };
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
+			"can only copy directories, not files; use oc_sys_copy for files");
+		oc_sys_err.code = 0;
         return false;
     }
 
@@ -175,10 +173,10 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
 
     if(result)
     {
-        oc_sys_err = (oc_sys_err_def){
-            .msg = OC_STR8("failed to copy tree"),
-            .code = result,
-        };
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
+            "failed to copy directory tree from \"%.*s\" to \"%.*s\"",
+			oc_str8_printf(src), oc_str8_printf(dst));
+        oc_sys_err.code = result;
         return false;
     }
 
@@ -189,9 +187,9 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst)
 {
 	if(!oc_sys_exists(src)) 
 	{
-		oc_sys_err = (oc_sys_err_def){
-			.msg = OC_STR8("failed to move file or directory, source does not exist"),
-		};
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
+			"failed to move file or directory, source does not exist: \"%.*s\"",
+			oc_str8_printf(src));
 		return false;
 	}
 
@@ -210,10 +208,10 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst)
 
 	if(result)
 	{
-		oc_sys_err = (oc_sys_err_def){
-			.msg = OC_STR8("failed to move file or directory"),
-				.code = result,
-		};
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
+			"failed to move \"%.*s\" to \"%.*s\"",
+			oc_str8_printf(src), oc_str8_printf(dst));
+		oc_sys_err.code = result;
 		return false;
 	}
 
