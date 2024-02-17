@@ -242,7 +242,10 @@ int macBundle(
         oc_str8 resource_dir = it->string;
         if(oc_sys_isdir(resource_dir))
         {
-            oc_sys_copytree(resource_dir, dataDir);
+			// NOTE(shaw): trailing slash means that contents are copied rather
+			// than the directory itself
+			oc_str8 resource_dir_slash = oc_path_append(a, resource_dir, OC_STR8("/"));
+			oc_sys_copytree(resource_dir_slash, dataDir);
         }
         else
         {
