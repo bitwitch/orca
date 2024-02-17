@@ -31,7 +31,8 @@ int macBundle(
     oc_str8_list resource_dirs,
     oc_str8 outDir,
     oc_str8 orcaDir,
-    oc_str8 module);
+    oc_str8 module,
+	bool mtlEnableCapture);
 
 int bundle(int argc, char** argv)
 {
@@ -49,9 +50,9 @@ int bundle(int argc, char** argv)
     oc_str8_list* resource_dirs = flag_strs(&c, "d", "resource-dir", "copy the contents of a folder to the resource directory");
     char** outDir = flag_str(&c, "C", "out-dir", NULL, "where to place the final application bundle (defaults to the current directory)");
     char** orcaDir = flag_str(&c, "O", "orca-dir", NULL, "override the system orca directory");
-    char** module = flag_pos(&c, "module", "a .wasm file containing the application's wasm module");
+    bool* mtlEnableCapture = flag_bool(&c, "M", "mtl-enable-capture", false, "analyze your app’s performance by invoking Metal’s frame capture");
 
-    // TODO: mtl-enable-capture
+    char** module = flag_pos(&c, "module", "a .wasm file containing the application's wasm module");
 
     if(!flag_parse(&c, argc, argv))
     {
@@ -92,7 +93,8 @@ int bundle(int argc, char** argv)
         *resource_dirs,
         OC_STR8(*outDir),
 		orca_dir_str8,
-        OC_STR8(*module));
+        OC_STR8(*module),
+		*mtlEnableCapture);
 #else
     #error Can't build the bundle script on this platform!
 #endif
@@ -110,11 +112,6 @@ int winBundle(
     oc_str8 orcaDir,
     oc_str8 module)
 {
-    if(!outDir.ptr)
-    {
-        outDir = oc_sys_getcwd(a);
-    }
-
     //-----------------------------------------------------------
     //NOTE: make bundle directory structure
     //-----------------------------------------------------------
@@ -190,13 +187,9 @@ int macBundle(
     oc_str8_list resource_dirs,
     oc_str8 outDir,
     oc_str8 orcaDir,
-    oc_str8 module)
+    oc_str8 module,
+	bool mtlEnableCapture)
 {
-    if(!outDir.ptr)
-    {
-        outDir = oc_sys_getcwd(a);
-    }
-
     //-----------------------------------------------------------
     //NOTE: make bundle directory structure
     //-----------------------------------------------------------
@@ -232,11 +225,13 @@ int macBundle(
     oc_str8 orcaLib = oc_path_append(a, orcaDir, OC_STR8("bin/liborca.dylib"));
     oc_str8 glesLib = oc_path_append(a, orcaDir, OC_STR8("src/ext/angle/bin/libGLESv2.dylib"));
     oc_str8 eglLib = oc_path_append(a, orcaDir, OC_STR8("src/ext/angle/bin/libEGL.dylib"));
+    oc_str8 renderer_lib = oc_path_append(a, orcaDir, OC_STR8("bin/mtl_renderer.metallib"));
 
     TRY(oc_sys_copy(orcaExe, exeDir));
     TRY(oc_sys_copy(orcaLib, exeDir));
     TRY(oc_sys_copy(glesLib, exeDir));
     TRY(oc_sys_copy(eglLib, exeDir));
+    TRY(oc_sys_copy(renderer_lib, exeDir));
 
     //-----------------------------------------------------------
     //NOTE: copy wasm module and data
@@ -265,6 +260,56 @@ int macBundle(
     //NOTE make icon
     //-----------------------------------------------------------
     //TODO
+
+	//-----------------------------------------------------------
+	//NOTE: write plist file
+	//-----------------------------------------------------------
+	oc_str8 bundle_sig = OC_STR8("????");
+	oc_str8 icon_file = OC_STR8("");
+
+	oc_str8 plist_contents = oc_str8_pushf(a,
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+"<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
+"<plist version=\"1.0\">"
+	"<dict>"
+		"<key>CFBundleName</key>"
+		"<string>%.*s</string>"
+		"<key>CFBundleDisplayName</key>"
+		"<string>%.*s</string>"
+		"<key>CFBundleIdentifier</key>"
+		"<string>%.*s</string>"
+		"<key>CFBundleVersion</key>"
+		"<string>%.*s</string>"
+		"<key>CFBundlePackageType</key>"
+		"<string>APPL</string>"
+		"<key>CFBundleSignature</key>"
+		"<string>%.*s</string>"
+		"<key>CFBundleExecutable</key>"
+		"<string>orca_runtime</string>"
+		"<key>CFBundleIconFile</key>"
+		"<string>icon.icns</string>"
+		"<key>NSHighResolutionCapable</key>"
+		"<string>True</string>"
+		"%s"
+	"</dict>"
+"</plist>",
+		oc_str8_printf(name),
+		oc_str8_printf(name),
+		oc_str8_printf(name),
+		oc_str8_printf(version),
+		oc_str8_printf(bundle_sig),
+		mtlEnableCapture ? "<key>MetalCaptureEnabled</key><true/>" : "");
+
+	oc_str8 plist_path = oc_path_append(a, contentsDir, OC_STR8("Info.plist"));
+	oc_file plist_file = oc_file_open(plist_path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
+	if (oc_file_is_nil(plist_file)) {
+		fprintf(stderr, "Error: failed to create plist file \"%.*s\"\n", 
+			oc_str8_printf(plist_path));
+		oc_file_close(plist_file);
+		return 1;
+	} 
+	oc_file_write(plist_file, plist_contents.len, plist_contents.ptr);
+	oc_file_close(plist_file);
 
     return 0;
 }
