@@ -9,6 +9,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#if OC_PLATFORM_MACOS
+	#include <fcntl.h>
+	#include <sys/stat.h>
+	#include <unistd.h>
+#endif
 
 #include "system.h"
 #include "zlib.h"
@@ -36,6 +41,47 @@ static int custom_file_close(mtar_t *tar) {
 	fclose(tar->stream);
 	return MTAR_ESUCCESS;
 }
+
+#if OC_PLATFORM_WINDOWS
+static bool write_file_from_tar(oc_str8 path, mtar_header_t *header, char *buf, u64 size) {
+	(void)header;
+	oc_file file = oc_file_open(path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
+	u64 written = oc_file_write(file, size, buf);
+	oc_file_close(file);
+	if (written != size) {
+		return false;
+	}
+	return true;
+}
+#elif OC_PLATFORM_MACOS
+// NOTE(shaw): open() is used here because some files extracted from an archive
+// need execute permissions which is not possible with oc_file_open or fopen
+static bool write_file_from_tar(oc_str8 path, mtar_header_t *header, char *buf, u64 size) {
+	oc_arena_scope scratch = oc_scratch_begin();
+	char *cpath = oc_str8_to_cstring(scratch.arena, path);
+	int fd = open(cpath, O_WRONLY|O_CREAT, header->mode);
+
+	bool write_success = true;
+	ssize_t bytes_written = 0;
+	for (u64 off = 0; off < size; off += bytes_written) {
+		bytes_written = write(fd, buf + off, size - off);
+		if (bytes_written == 0 || bytes_written == -1) {
+			write_success = false;
+			break;
+		}
+	}
+
+	int err = close(fd);
+	oc_scratch_end(scratch);
+	if (err == -1) {
+		return false;
+	}
+
+	return write_success;
+}
+#else
+    #error write_file_from_tar() not implemented on this platform.
+#endif
 
 int gzip_decompress(gzFile in_file, FILE *out_file) {
 	oc_arena_scope scratch = oc_scratch_begin();
@@ -100,15 +146,15 @@ int untar(FILE *file, oc_str8 out_dir) {
 				oc_scratch_end(scratch);
 				break;
 			}
+
 			oc_str8 path = oc_path_append(scratch.arena, out_dir, OC_STR8(h.name));
-			oc_file file = oc_file_open(path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
-			u64 written = oc_file_write(file, h.size, buf);
-			oc_file_close(file);
+			bool ok = write_file_from_tar(path, &h, buf, h.size);
 			oc_scratch_end(scratch);
-			if (written != h.size) {
+			if (!ok) {
 				err = MTAR_EWRITEFAIL;
 				break;
 			}
+
 
 		} else {
 			// skip unknown / unhandled file types
