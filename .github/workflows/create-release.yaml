@@ -76,6 +76,7 @@ jobs:
             cd ..
             cp artifacts/orca-runtime-mac-x64/bin/orca_runtime  orca-mac-x64/bin
             cp artifacts/orca-runtime-mac-x64/bin/liborca.dylib orca-mac-x64/bin
+            cp artifacts/orca-runtime-mac-x64/bin/mtl_renderer.metallib orca-mac-x64/bin
             # gather source code
             cp -r artifacts/src-mac-x64/* orca-mac-x64/src
 
@@ -101,6 +102,7 @@ jobs:
             #cd ..
             #cp artifacts/orca-runtime-mac-arm64/bin/orca_runtime  orca-mac-arm64/bin
             #cp artifacts/orca-runtime-mac-arm64/bin/liborca.dylib orca-mac-arm64/bin
+            #cp artifacts/orca-runtime-mac-arm64/bin/mtl_renderer.metallib orca-mac-arm64/bin
             ## gather source code
             #cp -r artifacts/src-mac-arm64/* orca-mac-arm64/src
 
