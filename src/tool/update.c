@@ -88,8 +88,7 @@ int update(int argc, char** argv)
 		return 1;
 	}
 
-	// TODO(shaw): use main orca repo instead of my fork
-	oc_str8 repo_url_base = OC_STR8("https://github.com/bitwitch/orca");
+	oc_str8 repo_url_base = OC_STR8("https://github.com/orca-app/orca");
 
 	//-----------------------------------------------------------------------------
 	// get the latest version number from github release url
