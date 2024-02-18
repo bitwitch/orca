@@ -77,7 +77,7 @@ bool oc_sys_mkdirs(oc_str8 path)
     if(result)
     {
         snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
-			"failed to create directories \"%.*s\"", oc_str8_printf(path));
+			"failed to create directories \"%.*s\"", oc_str8_ip(path));
         oc_sys_err.code = result;
         return false;
     }
@@ -113,7 +113,7 @@ bool oc_sys_rmdir(oc_str8 path)
     if(result)
     {
         snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
-			"failed to remove directory \"%.*s\"", oc_str8_printf(path));
+			"failed to remove directory \"%.*s\"", oc_str8_ip(path));
         oc_sys_err.code = result;
         return false;
     }
@@ -126,7 +126,7 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
     if(oc_sys_isdir(src))
     {
         snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
-            "failed to copy file: \"%.*s\" is a directory, oc_sys_copy can only copy files; use oc_sys_copytree for directories", oc_str8_printf(src));
+            "failed to copy file: \"%.*s\" is a directory, oc_sys_copy can only copy files; use oc_sys_copytree for directories", oc_str8_ip(src));
         return false;
     }
 
@@ -148,7 +148,7 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
     {
         snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
             "failed to copy file \"%.*s\" to \"%.*s\"", 
-			oc_str8_printf(src), oc_str8_printf(dst));
+			oc_str8_ip(src), oc_str8_ip(dst));
         oc_sys_err.code = result;
         return false;
     }
@@ -178,7 +178,7 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
     {
         snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
             "failed to copy directory tree from \"%.*s\" to \"%.*s\"",
-			oc_str8_printf(src), oc_str8_printf(dst));
+			oc_str8_ip(src), oc_str8_ip(dst));
         oc_sys_err.code = result;
         return false;
     }
@@ -222,7 +222,7 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst)
 	if (!result) {
 		snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
 			"failed to move \"%.*s\" to \"%.*s\"",
-			oc_str8_printf(src), oc_str8_printf(dst));
+			oc_str8_ip(src), oc_str8_ip(dst));
 	}
 
 	oc_scratch_end(scratch);
