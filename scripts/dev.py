@@ -26,6 +26,8 @@ def attach_dev_commands(subparsers):
     build_cmd.set_defaults(func=dev_shellish(build_runtime))
 
     tool_cmd = subparsers.add_parser("build-tool", help="Build the Orca CLI tool from source.")
+    tool_cmd.add_argument("--release", action="store_true", 
+        help="compile Orca CLI tool in release mode (default is debug)")
     tool_cmd.set_defaults(func=dev_shellish(build_tool))
 
     clean_cmd = subparsers.add_parser("clean", help="Delete all build artifacts and start fresh.")
@@ -576,13 +578,15 @@ def build_zlib():
         exit(1)
 
 
-def build_tool_win(githash, outname):
+def build_tool_win(release, githash, outname):
     includes = [ 
         "/I", "..",
         "/I", "../ext/curl/builds/static/include",
         "/I", "../ext/zlib",
         "/I", "../ext/microtar"
     ]
+
+    debug_flags = ["/O2"] if release else ["/Zi", "/DOC_DEBUG", "/DOC_LOG_COMPILE_DEBUG", "/W3"]
 
     libs = [
         "shlwapi.lib",
@@ -605,9 +609,9 @@ def build_tool_win(githash, outname):
     subprocess.run([
         "cl",
         "/nologo",
-        "/Zi", "/Zc:preprocessor",
+        "/Zc:preprocessor",
         "/std:c11", "/experimental:c11atomics",
-        "/O2",
+        *debug_flags,
         *includes,
         "/DFLAG_IMPLEMENTATION",
         "/DOC_NO_APP_LAYER",
@@ -620,13 +624,15 @@ def build_tool_win(githash, outname):
         *libs,
     ], check=True)
 
-def build_tool_mac(githash, outname):
+def build_tool_mac(release, githash, outname):
     includes = [ 
         "-I", "..",
         "-I", "../ext/curl/builds/static/include",
         "-I", "../ext/zlib",
         "-I", "../ext/microtar"
     ]
+
+    debug_flags = ["-O2"] if release else ["-g", "-DOC_DEBUG", "-DOC_LOG_COMPILE_DEBUG"]
 
     libs = [
         "-framework", "Cocoa",
@@ -645,7 +651,7 @@ def build_tool_mac(githash, outname):
         "clang",
         "-mmacos-version-min=10.15.4",
         "-std=c11",
-        "-g", "-O2",
+        *debug_flags,
         *includes,
         "-D", "FLAG_IMPLEMENTATION",
         "-D", "OC_NO_APP_LAYER",
@@ -680,9 +686,9 @@ def build_tool(args):
         outname = "orca.exe" if platform.system() == "Windows" else "orca"
 
         if platform.system() == "Windows":
-            build_tool_win(githash, outname)
+            build_tool_win(args.release, githash, outname)
         elif platform.system() == "Darwin":
-            build_tool_mac(githash, outname)
+            build_tool_mac(args.release, githash, outname)
         else:
             log_error(f"can't build cli tool for unknown platform '{platform.system()}'")
             exit(1)
