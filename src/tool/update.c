@@ -114,7 +114,7 @@ int update(int argc, char** argv)
     oc_str8 version_dir = oc_path_append(&arena, orca_dir, version);
 
 	if (oc_sys_exists(version_dir)) {
-		printf("Already up to date with version %.*s\n", oc_str8_printf(version));
+		printf("Already up to date with version %.*s\n", oc_str8_ip(version));
 		return 0;
 	} 
 
@@ -129,9 +129,9 @@ int update(int argc, char** argv)
 	//-----------------------------------------------------------------------------
 	{
 		oc_str8 release_tarname = oc_str8_pushf(&arena, "%.*s.tar.gz", 
-			oc_str8_printf(RELEASE_FILENAME));
+			oc_str8_ip(RELEASE_FILENAME));
 		oc_str8 release_url = oc_str8_pushf(&arena, "/releases/latest/download/%.*s", 
-			oc_str8_printf(release_tarname));
+			oc_str8_ip(release_tarname));
 		release_url = oc_path_append(&arena, repo_url_base, release_url);
 		oc_str8 release_filepath = oc_path_append(&arena, temp_dir, release_tarname);
 
@@ -177,7 +177,7 @@ int update(int argc, char** argv)
 			if (!oc_file_is_nil(file)) {
 				oc_file_seek(file, 0, OC_FILE_SEEK_END);
 				oc_str8 version_and_checksum = oc_str8_pushf(&arena, "%.*s %.*s\n", 
-						oc_str8_printf(version), oc_str8_printf(checksum));
+						oc_str8_ip(version), oc_str8_ip(checksum));
 				oc_file_write(file, version_and_checksum.len, version_and_checksum.ptr);
 			} else {
 				fprintf(stderr, "error: failed to open file %s\n", all_versions.ptr);

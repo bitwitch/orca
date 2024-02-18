@@ -329,11 +329,11 @@ int macBundle(
 		"%s"
 	"</dict>"
 "</plist>",
-		oc_str8_printf(name),
-		oc_str8_printf(name),
-		oc_str8_printf(name),
-		oc_str8_printf(version),
-		oc_str8_printf(bundle_sig),
+		oc_str8_ip(name),
+		oc_str8_ip(name),
+		oc_str8_ip(name),
+		oc_str8_ip(version),
+		oc_str8_ip(bundle_sig),
 		mtlEnableCapture ? "<key>MetalCaptureEnabled</key><true/>" : "");
 
 	oc_str8 plist_path = oc_path_append(a, contentsDir, OC_STR8("Info.plist"));
@@ -341,7 +341,7 @@ int macBundle(
 	if(oc_file_is_nil(plist_file)) 
 	{
 		fprintf(stderr, "Error: failed to create plist file \"%.*s\"\n", 
-			oc_str8_printf(plist_path));
+			oc_str8_ip(plist_path));
 		oc_file_close(plist_file);
 		return 1;
 	} 
