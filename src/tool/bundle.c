@@ -20,7 +20,6 @@ int winBundle(
     oc_str8 version,
     oc_str8_list resource_dirs,
     oc_str8 outDir,
-    oc_str8 orcaDir,
     oc_str8 module);
 
 int macBundle(
@@ -30,7 +29,6 @@ int macBundle(
     oc_str8 version,
     oc_str8_list resource_dirs,
     oc_str8 outDir,
-    oc_str8 orcaDir,
     oc_str8 module,
 	bool mtlEnableCapture);
 
@@ -49,7 +47,6 @@ int bundle(int argc, char** argv)
     char** version = flag_str(&c, NULL, "version", "0.0.0", "a version number to embed in the application bundle");
     oc_str8_list* resource_dirs = flag_strs(&c, "d", "resource-dir", "copy the contents of a folder to the resource directory");
     char** outDir = flag_str(&c, "C", "out-dir", NULL, "where to place the final application bundle (defaults to the current directory)");
-    char** orcaDir = flag_str(&c, "O", "orca-dir", NULL, "override the system orca directory");
     bool* mtlEnableCapture = flag_bool(&c, "M", "mtl-enable-capture", false, "analyze your app’s performance by invoking Metal’s frame capture");
 
     char** module = flag_pos(&c, "module", "a .wasm file containing the application's wasm module");
@@ -72,7 +69,6 @@ int bundle(int argc, char** argv)
         return 1;
     }
 
-	oc_str8 orca_dir_str8 = *orcaDir ? OC_STR8(*orcaDir) : get_current_version_dir(&a);
 
 #if OC_PLATFORM_WINDOWS
     return winBundle(
@@ -82,7 +78,6 @@ int bundle(int argc, char** argv)
         OC_STR8(*version),
         *resource_dirs,
         OC_STR8(*outDir),
-		orca_dir_str8,
         OC_STR8(*module));
 #elif OC_PLATFORM_MACOS
     return macBundle(
@@ -92,7 +87,6 @@ int bundle(int argc, char** argv)
         OC_STR8(*version),
         *resource_dirs,
         OC_STR8(*outDir),
-		orca_dir_str8,
         OC_STR8(*module),
 		*mtlEnableCapture);
 #else
@@ -109,12 +103,12 @@ int winBundle(
     oc_str8 version,
     oc_str8_list resource_dirs,
     oc_str8 outDir,
-    oc_str8 orcaDir,
     oc_str8 module)
 {
     //-----------------------------------------------------------
     //NOTE: make bundle directory structure
     //-----------------------------------------------------------
+	oc_str8 orcaDir = get_current_version_dir(a);
     oc_str8 bundleDir = oc_path_append(a, outDir, name);
     oc_str8 exeDir = oc_path_append(a, bundleDir, OC_STR8("bin"));
     oc_str8 resDir = oc_path_append(a, bundleDir, OC_STR8("resources"));
@@ -186,7 +180,6 @@ int macBundle(
     oc_str8 version,
     oc_str8_list resource_dirs,
     oc_str8 outDir,
-    oc_str8 orcaDir,
     oc_str8 module,
 	bool mtlEnableCapture)
 {
@@ -198,6 +191,7 @@ int macBundle(
     oc_str8_list_push(a, &list, OC_STR8(".app"));
     name = oc_str8_list_join(a, list);
 
+	oc_str8 orcaDir = get_current_version_dir(a);
     oc_str8 bundleDir = oc_path_append(a, outDir, name);
     oc_str8 contentsDir = oc_path_append(a, bundleDir, OC_STR8("Contents"));
     oc_str8 exeDir = oc_path_append(a, contentsDir, OC_STR8("MacOS"));
@@ -305,7 +299,8 @@ int macBundle(
 
 	oc_str8 plist_path = oc_path_append(a, contentsDir, OC_STR8("Info.plist"));
 	oc_file plist_file = oc_file_open(plist_path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
-	if (oc_file_is_nil(plist_file)) {
+	if(oc_file_is_nil(plist_file)) 
+	{
 		fprintf(stderr, "Error: failed to create plist file \"%.*s\"\n", 
 			oc_str8_printf(plist_path));
 		oc_file_close(plist_file);
