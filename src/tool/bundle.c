@@ -18,6 +18,7 @@ int winBundle(
     oc_str8 name,
     oc_str8 icon,
     oc_str8 version,
+    oc_str8_list resource_files,
     oc_str8_list resource_dirs,
     oc_str8 outDir,
     oc_str8 module);
@@ -27,6 +28,7 @@ int macBundle(
     oc_str8 name,
     oc_str8 icon,
     oc_str8 version,
+    oc_str8_list resource_files,
     oc_str8_list resource_dirs,
     oc_str8 outDir,
     oc_str8 module,
@@ -45,9 +47,10 @@ int bundle(int argc, char** argv)
     char** name = flag_str(&c, "n", "name", "out", "the app's name");
     char** icon = flag_str(&c, "i", "icon", NULL, "an image file to use as the application's icon");
     char** version = flag_str(&c, NULL, "version", "0.0.0", "a version number to embed in the application bundle");
-    oc_str8_list* resource_dirs = flag_strs(&c, "d", "resource-dir", "copy the contents of a folder to the resource directory");
+    oc_str8_list* resource_files = flag_strs(&c, "d", "resource", "copy a file to the app's resource directory");
+    oc_str8_list* resource_dirs = flag_strs(&c, "D", "resource-dir", "copy the contents of a folder to the app's resource directory");
     char** outDir = flag_str(&c, "C", "out-dir", NULL, "where to place the final application bundle (defaults to the current directory)");
-    bool* mtlEnableCapture = flag_bool(&c, "M", "mtl-enable-capture", false, "analyze your app’s performance by invoking Metal’s frame capture");
+    bool* mtlEnableCapture = flag_bool(&c, "M", "mtl-enable-capture", false, "analyze your app's performance by invoking Metal's frame capture");
 
     char** module = flag_pos(&c, "module", "a .wasm file containing the application's wasm module");
 
@@ -76,6 +79,7 @@ int bundle(int argc, char** argv)
         OC_STR8(*name),
         OC_STR8(*icon),
         OC_STR8(*version),
+        *resource_files,
         *resource_dirs,
         OC_STR8(*outDir),
         OC_STR8(*module));
@@ -85,6 +89,7 @@ int bundle(int argc, char** argv)
         OC_STR8(*name),
         OC_STR8(*icon),
         OC_STR8(*version),
+        *resource_files,
         *resource_dirs,
         OC_STR8(*outDir),
         OC_STR8(*module),
@@ -101,6 +106,7 @@ int winBundle(
     oc_str8 name,
     oc_str8 icon,
     oc_str8 version,
+    oc_str8_list resource_files,
     oc_str8_list resource_dirs,
     oc_str8 outDir,
     oc_str8 module)
@@ -135,7 +141,7 @@ int winBundle(
     oc_str8 glesLib = oc_path_append(a, orcaDir, OC_STR8("src/ext/angle/bin/libGLESv2.dll"));
     oc_str8 eglLib = oc_path_append(a, orcaDir, OC_STR8("src/ext/angle/bin/libEGL.dll"));
 
-    oc_str8 exeOut = oc_path_append(a, exeDir, oc_str8_pushf(a, "%.*s.exe", oc_str8_printf(name)));
+    oc_str8 exeOut = oc_path_append(a, exeDir, oc_str8_pushf(a, "%.*s.exe", oc_str8_ip(name)));
     TRY(oc_sys_copy(orcaExe, exeOut));
     TRY(oc_sys_copy(orcaLib, exeDir));
     TRY(oc_sys_copy(glesLib, exeDir));
@@ -145,24 +151,40 @@ int winBundle(
     //NOTE: copy wasm module and data
     //-----------------------------------------------------------
     TRY(oc_sys_copy(module, oc_path_append(a, wasmDir, OC_STR8("/module.wasm"))));
+
+    oc_str8_list_for(resource_files, it)
+    {
+        oc_str8 resource_file = it->string;
+        if(oc_sys_isdir(resource_file))
+        {
+            printf("Error: Got %.*s as a resource file, but it is a directory. Ignoring.", 
+				oc_str8_ip(resource_file));
+        }
+        else
+        {
+            TRY(oc_sys_copy(resource_file, dataDir));
+        }
+    }
+
     oc_str8_list_for(resource_dirs, it)
     {
         oc_str8 resource_dir = it->string;
         if(oc_sys_isdir(resource_dir))
         {
-            oc_sys_copytree(resource_dir, dataDir);
+            TRY(oc_sys_copytree(resource_dir, dataDir));
         }
         else
         {
-            printf("Error: Got %s as a resource dir, but it is not a directory. Ignoring.", resource_dir.ptr);
+            printf("Error: Got %.*s as a resource dir, but it is not a directory. Ignoring.", 
+				oc_str8_ip(resource_dir));
         }
     }
 
     //-----------------------------------------------------------
     //NOTE: copy runtime resources
     //-----------------------------------------------------------
-    oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo.ttf")), resDir);
-    oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo Bold.ttf")), resDir);
+    TRY(oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo.ttf")), resDir));
+    TRY(oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo Bold.ttf")), resDir));
 
     //-----------------------------------------------------------
     //NOTE make icon
@@ -178,6 +200,7 @@ int macBundle(
     oc_str8 name,
     oc_str8 icon,
     oc_str8 version,
+    oc_str8_list resource_files,
     oc_str8_list resource_dirs,
     oc_str8 outDir,
     oc_str8 module,
@@ -231,6 +254,21 @@ int macBundle(
     //NOTE: copy wasm module and data
     //-----------------------------------------------------------
     TRY(oc_sys_copy(module, oc_path_append(a, wasmDir, OC_STR8("/module.wasm"))));
+
+    oc_str8_list_for(resource_files, it)
+    {
+        oc_str8 resource_file = it->string;
+        if(oc_sys_isdir(resource_file))
+        {
+            printf("Error: Got %.*s as a resource file, but it is a directory. Ignoring.",
+				oc_str8_ip(resource_file));
+        }
+        else
+        {
+            TRY(oc_sys_copy(resource_file, dataDir));
+        }
+    }
+
     oc_str8_list_for(resource_dirs, it)
     {
         oc_str8 resource_dir = it->string;
@@ -239,19 +277,20 @@ int macBundle(
 			// NOTE(shaw): trailing slash means that contents are copied rather
 			// than the directory itself
 			oc_str8 resource_dir_slash = oc_path_append(a, resource_dir, OC_STR8("/"));
-			oc_sys_copytree(resource_dir_slash, dataDir);
+			TRY(oc_sys_copytree(resource_dir_slash, dataDir));
         }
         else
         {
-            printf("Error: Got %s as a resource dir, but it is not a directory. Ignoring.", resource_dir.ptr);
+            printf("Error: Got %.*s as a resource dir, but it is not a directory. Ignoring.", 
+				oc_str8_ip(resource_dir));
         }
     }
 
     //-----------------------------------------------------------
     //NOTE: copy runtime resources
     //-----------------------------------------------------------
-    oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo.ttf")), resDir);
-    oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo Bold.ttf")), resDir);
+    TRY(oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo.ttf")), resDir));
+    TRY(oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo Bold.ttf")), resDir));
 
     //-----------------------------------------------------------
     //NOTE make icon

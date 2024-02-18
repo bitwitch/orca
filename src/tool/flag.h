@@ -322,14 +322,16 @@ bool flag_parse(Flag_Context* c, int argc, char** argv)
             Flag* flagObj = &c->flags[i];
 
             const char* expectedName = longFlag ? flagObj->longName : flagObj->shortName;
-            int expectedLen = strlen(flag);
+            int expectedLen = strlen(expectedName);
+
+            int flagLen = strlen(flag);
             char* eq = strchr(flag, '=');
             if(eq)
             {
-                expectedLen = eq - flag;
+                flagLen = eq - flag;
             }
 
-            if(strncmp(expectedName, flag, expectedLen) == 0)
+            if(expectedLen == flagLen && strncmp(expectedName, flag, flagLen) == 0)
             {
                 static_assert(COUNT_FLAG_TYPES == 4, "Exhaustive flag type parsing");
                 switch(flagObj->type)
