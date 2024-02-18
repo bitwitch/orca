@@ -38,12 +38,30 @@ oc_str8 oc_path_executable(oc_arena* arena)
 oc_str8 oc_path_canonical(oc_arena* arena, oc_str8 path)
 {
 	oc_arena_scope scratch = oc_scratch_begin_next(arena);
-	char* path_cstr = oc_str8_to_cstring(scratch.arena, path);
+	oc_str16 pathW = oc_win32_utf8_to_wide(scratch.arena, path);
 
-	char path_buf[_MAX_PATH];
-	char *full_path = _fullpath(path_buf, path_cstr, _MAX_PATH);
+	DWORD required_size = GetFullPathNameW(pathW.ptr, 0, NULL, NULL);
+	if(required_size == 0)
+	{
+		oc_log_error("oc_path_canonical: GetFullPathNameW failed to get required buffer size for full path of %.*s",
+			oc_str8_ip(path));
+		oc_scratch_end(scratch);
+		return path;
+	}
 
-	oc_str8 result = oc_str8_push_cstring(arena, full_path);
+	WCHAR *path_buf = oc_arena_push(scratch.arena, required_size);
+	DWORD retval = GetFullPathNameW(pathW.ptr, required_size, path_buf, NULL);
+	if(retval == 0)
+	{
+		oc_log_error("oc_path_canonical: GetFullPathNameW failed to get the full path of %.*s",
+			oc_str8_ip(path));
+		oc_scratch_end(scratch);
+		return path;
+	}
+
+	OC_ASSERT(retval < required_size);
+	oc_str16 full_path_str16 = {.ptr = path_buf, .len = required_size - 1};
+	oc_str8 result = oc_win32_wide_to_utf8(arena, full_path_str16);
 
 	oc_scratch_end(scratch);
 

@@ -65,14 +65,10 @@ bool oc_sys_isdir(oc_str8 path)
 
 bool oc_sys_mkdirs(oc_str8 path)
 {
-
 	oc_arena_scope scratch = oc_scratch_begin();
-	const char *cpath = oc_str8_to_cstring(scratch.arena, path);
-
-	char path_buf[_MAX_PATH];
-	char *abspath = _fullpath(path_buf, cpath, _MAX_PATH);
-
-	oc_str8 cmd = oc_str8_pushf(scratch.arena, "mkdir \"%s\"", abspath);
+	oc_str8 full_path = oc_path_canonical(scratch.arena, path);
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, 
+		"mkdir \"%.*s\"", oc_str8_ip(full_path));
     int result = system(cmd.ptr);
     oc_scratch_end(scratch);
 
@@ -118,15 +114,10 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
     }
 
 	oc_arena_scope scratch = oc_scratch_begin();
-	char *csrc = oc_str8_to_cstring(scratch.arena, src);
-	char *cdst = oc_str8_to_cstring(scratch.arena, dst);
-
-	char src_buf[_MAX_PATH];
-	char dst_buf[_MAX_PATH];
-	char *full_src = _fullpath(src_buf, csrc, _MAX_PATH);
-	char *full_dst = _fullpath(dst_buf, cdst, _MAX_PATH);
-
-	oc_str8 cmd = oc_str8_pushf(scratch.arena, "copy \"%s\" \"%s\"", full_src, full_dst);
+	oc_str8 full_src = oc_path_canonical(scratch.arena, src);
+	oc_str8 full_dst = oc_path_canonical(scratch.arena, dst);
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, "copy \"%.*s\" \"%.*s\"", 
+		oc_str8_ip(full_src), oc_str8_ip(full_dst));
     int result = system(cmd.ptr);
     oc_scratch_end(scratch);
 
@@ -159,15 +150,11 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
     }
 
 	oc_arena_scope scratch = oc_scratch_begin();
-	char *csrc = oc_str8_to_cstring(scratch.arena, src);
-	char *cdst = oc_str8_to_cstring(scratch.arena, dst);
-
-	char src_buf[_MAX_PATH];
-	char dst_buf[_MAX_PATH];
-	char *full_src = _fullpath(src_buf, csrc, _MAX_PATH);
-	char *full_dst = _fullpath(dst_buf, cdst, _MAX_PATH);
-
-	oc_str8 cmd = oc_str8_pushf(scratch.arena, "xcopy /s /e /y \"%s\" \"%s\"", full_src, full_dst);
+	oc_str8 full_src = oc_path_canonical(scratch.arena, src);
+	oc_str8 full_dst = oc_path_canonical(scratch.arena, dst);
+	oc_str8 cmd = oc_str8_pushf(scratch.arena,
+		"xcopy /s /e /y \"%.*s\" \"%.*s\"", 
+		oc_str8_ip(full_src), oc_str8_ip(full_dst));
     int result = system(cmd.ptr);
     oc_scratch_end(scratch);
 
@@ -194,15 +181,11 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst)
 	}
 
 	oc_arena_scope scratch = oc_scratch_begin();
-	char *csrc = oc_str8_to_cstring(scratch.arena, src);
-	char *cdst = oc_str8_to_cstring(scratch.arena, dst);
-
-	char src_buf[_MAX_PATH];
-	char dst_buf[_MAX_PATH];
-	char *full_src = _fullpath(src_buf, csrc, _MAX_PATH);
-	char *full_dst = _fullpath(dst_buf, cdst, _MAX_PATH);
-
-	oc_str8 cmd = oc_str8_pushf(scratch.arena, "move \"%s\" \"%s\"", full_src, full_dst);
+	oc_str8 full_src = oc_path_canonical(scratch.arena, src);
+	oc_str8 full_dst = oc_path_canonical(scratch.arena, dst);
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, 
+		"move \"%.*s\" \"%.*s\"", 
+		oc_str8_ip(full_src), oc_str8_ip(full_dst));
 	int result = system(cmd.ptr);
 	oc_scratch_end(scratch);
 
