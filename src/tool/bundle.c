@@ -50,7 +50,7 @@ int bundle(int argc, char** argv)
     oc_str8_list* resource_files = flag_strs(&c, "d", "resource", "copy a file to the app's resource directory");
     oc_str8_list* resource_dirs = flag_strs(&c, "D", "resource-dir", "copy the contents of a folder to the app's resource directory");
     char** outDir = flag_str(&c, "C", "out-dir", NULL, "where to place the final application bundle (defaults to the current directory)");
-    bool* mtlEnableCapture = flag_bool(&c, "M", "mtl-enable-capture", false, "analyze your app's performance by invoking Metal's frame capture");
+    bool* mtlEnableCapture = flag_bool(&c, "M", "mtl-enable-capture", false, "enable Metal frame capture in Xcode for the application bundle (macOS only)");
 
     char** module = flag_pos(&c, "module", "a .wasm file containing the application's wasm module");
 
