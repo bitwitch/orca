@@ -115,18 +115,30 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
 
 	oc_arena_scope scratch = oc_scratch_begin();
 	oc_str8 full_src = oc_path_canonical(scratch.arena, src);
-	oc_str8 full_dst = oc_path_canonical(scratch.arena, dst);
-	oc_str8 cmd = oc_str8_pushf(scratch.arena, "copy \"%.*s\" \"%.*s\"", 
-		oc_str8_ip(full_src), oc_str8_ip(full_dst));
-    int result = system(cmd.ptr);
+	oc_str8 full_dst = {0};
+	if(oc_sys_isdir(dst))
+	{
+		oc_str8 filename = oc_path_slice_filename(src);
+		oc_str8 dst_with_filename = oc_path_append(scratch.arena, dst, filename);
+		full_dst = oc_path_canonical(scratch.arena, dst_with_filename);
+	} else {
+		full_dst = oc_path_canonical(scratch.arena, dst);
+	}
+
+	// TODO(shaw): remove this once oc_win32_wide_to_utf8() is fixed to null terminate
+	char *full_src_cstr = oc_str8_to_cstring(scratch.arena, full_src);
+	char *full_dst_cstr = oc_str8_to_cstring(scratch.arena, full_dst);
+
+	BOOL result = CopyFile(full_src_cstr, full_dst_cstr, false);
+
     oc_scratch_end(scratch);
 
-    if(result)
+    if(!result)
     {
         snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
             "failed to copy file \"%.*s\" to \"%.*s\"", 
 			oc_str8_ip(src), oc_str8_ip(dst));
-        oc_sys_err.code = result;
+        oc_sys_err.code = GetLastError();
         return false;
     }
 
