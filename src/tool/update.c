@@ -52,6 +52,7 @@ static CURLcode download_file(CURL *handle, oc_str8 url, oc_str8 out_path)
 
 	curl_easy_reset(handle);
 	curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, curl_errbuf);
+	curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1);
 	curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1); 
 	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curl_callback_write_to_file);
 	curl_easy_setopt(handle, CURLOPT_WRITEDATA, &file);
@@ -95,6 +96,7 @@ int update(int argc, char** argv)
 	//-----------------------------------------------------------------------------
 	oc_str8 latest_url = oc_path_append(&arena, repo_url_base, OC_STR8("/releases/latest"));
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
+	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1); // follow redirects
 	curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
 	curl_easy_setopt(curl, CURLOPT_URL, latest_url.ptr);
