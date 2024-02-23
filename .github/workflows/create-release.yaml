@@ -48,8 +48,10 @@ jobs:
             cd artifacts
             tar -xzf orca-runtime-win.tar.gz
             cd ..
-            cp artifacts/orca-runtime-win/bin/orca_runtime.exe orca-win/bin
+            cp artifacts/orca-runtime-win/bin/runtime.obj orca-win/bin
             cp artifacts/orca-runtime-win/bin/orca.dll orca-win/bin
+            cp artifacts/orca-runtime-win/bin/orca.dll.lib orca-win/bin
+            cp artifacts/orca-runtime-win/bin/wasm3.lib orca-win/bin
             # gather source code
             cp -r artifacts/src-win/* orca-win/src
 

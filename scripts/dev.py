@@ -307,22 +307,16 @@ def build_orca_win(release):
         "/I", "src/ext/angle/include",
         "/I", "src/ext/wasm3/source",
     ]
-    libs = [
-        "/LIBPATH:build/bin",
-        "orca.dll.lib",
-        "wasm3.lib",
-    ]
 
     subprocess.run([
         "cl",
+        "/c",
         "/Zi", "/Zc:preprocessor",
         "/std:c11", "/experimental:c11atomics",
         *includes,
         "src/runtime.c",
-        "/link", *libs,
-        "/out:build/bin/orca_runtime.exe",
+        "/Fo:build/bin/runtime.obj",
     ], check=True)
-
 
 def build_orca_mac(release):
 
@@ -581,12 +575,14 @@ def build_zlib():
 def build_tool_win(release, githash, outname):
     includes = [ 
         "/I", "..",
+        "/I", "../ext/stb",
         "/I", "../ext/curl/builds/static/include",
         "/I", "../ext/zlib",
         "/I", "../ext/microtar"
     ]
 
-    debug_flags = ["/O2"] if release else ["/Zi", "/DOC_DEBUG", "/DOC_LOG_COMPILE_DEBUG", "/W3"]
+    # debug_flags = ["/O2"] if release else ["/Zi", "/DOC_DEBUG", "/DOC_LOG_COMPILE_DEBUG", "/W3"]
+    debug_flags = ["/O2"] if release else ["/Zi", "/DOC_DEBUG", "/DOC_LOG_COMPILE_DEBUG"]
 
     libs = [
         "shlwapi.lib",
