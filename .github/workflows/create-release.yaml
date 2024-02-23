@@ -89,31 +89,31 @@ jobs:
             tar -czf orca-mac-x64.tar.gz orca-mac-x64 sha1.sum
             mv orca-mac-x64.tar.gz releases
 
-        - name: Package Mac arm64 Release
-          run: |
-            mkdir -p orca-mac-arm64/bin
-            mkdir -p orca-mac-arm64/orca-libc
-            mkdir -p orca-mac-arm64/resources
-            mkdir -p orca-mac-arm64/src
-            # gather fonts
-            cp repo/resources/* orca-mac-arm64/resources
-            # gather runtime
-            cd artifacts
-            tar -xzf orca-runtime-mac-arm64.tar.gz
-            cd ..
-            cp artifacts/orca-runtime-mac-arm64/bin/orca_runtime  orca-mac-arm64/bin
-            cp artifacts/orca-runtime-mac-arm64/bin/liborca.dylib orca-mac-arm64/bin
-            cp artifacts/orca-runtime-mac-arm64/bin/mtl_renderer.metallib orca-mac-arm64/bin
-            # gather source code
-            cp -r artifacts/src-mac-arm64/* orca-mac-arm64/src
+        #- name: Package Mac arm64 Release
+          #run: |
+            #mkdir -p orca-mac-arm64/bin
+            #mkdir -p orca-mac-arm64/orca-libc
+            #mkdir -p orca-mac-arm64/resources
+            #mkdir -p orca-mac-arm64/src
+            ## gather fonts
+            #cp repo/resources/* orca-mac-arm64/resources
+            ## gather runtime
+            #cd artifacts
+            #tar -xzf orca-runtime-mac-arm64.tar.gz
+            #cd ..
+            #cp artifacts/orca-runtime-mac-arm64/bin/orca_runtime  orca-mac-arm64/bin
+            #cp artifacts/orca-runtime-mac-arm64/bin/liborca.dylib orca-mac-arm64/bin
+            #cp artifacts/orca-runtime-mac-arm64/bin/mtl_renderer.metallib orca-mac-arm64/bin
+            ## gather source code
+            #cp -r artifacts/src-mac-arm64/* orca-mac-arm64/src
 
-            # TODO(shaw): gather orca-libc once it is built by ci
+            ## TODO(shaw): gather orca-libc once it is built by ci
 
-            # generate checksum file
-            find orca-mac-arm64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
-            # create release tarball
-            tar -czf orca-mac-arm64.tar.gz orca-mac-arm64 sha1.sum
-            mv orca-mac-arm64.tar.gz releases
+            ## generate checksum file
+            #find orca-mac-arm64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
+            ## create release tarball
+            #tar -czf orca-mac-arm64.tar.gz orca-mac-arm64 sha1.sum
+            #mv orca-mac-arm64.tar.gz releases
 
         - uses: ncipollo/release-action@v1
           with:
