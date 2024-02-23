@@ -223,7 +223,7 @@ cleanup:
 	}
 	if (tar_file) {
 		fclose(tar_file);
-		// remove(tar_path_cstr);
+		remove(tar_path_cstr);
 	}
 	oc_scratch_end(scratch);
 	return result;
