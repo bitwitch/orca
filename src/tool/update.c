@@ -28,11 +28,11 @@
 
 static char curl_errbuf[CURL_ERROR_SIZE]; // buffer for last curl error message 
 
-size_t curl_callback_write_to_file(char *data, size_t size, size_t nmemb, void *userdata);
-const char *curl_last_error(CURLcode code);
-CURLcode download_file(CURL *handle, oc_str8 url, oc_str8 out_path);
-bool overwrite_current_version(oc_str8 new_version);
-int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str8 orca_dir, oc_str8 old_version, oc_str8 new_version);
+static size_t curl_callback_write_to_file(char *data, size_t size, size_t nmemb, void *userdata);
+static const char *curl_last_error(CURLcode code);
+static CURLcode download_file(CURL *handle, oc_str8 url, oc_str8 out_path);
+static bool overwrite_current_version(oc_str8 new_version);
+static int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str8 orca_dir, oc_str8 old_version, oc_str8 new_version);
 
 int update(int argc, char** argv)
 {
@@ -331,10 +331,16 @@ static int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str
 	int result = 0;
 	oc_arena_scope scratch = oc_scratch_begin();
 
+	oc_str8 temp_dir = oc_path_append(scratch.arena, orca_dir, OC_STR8("temporary"));
+	if(!oc_sys_exists(temp_dir))
+	{
+		TRY(oc_sys_mkdirs(temp_dir));
+	}
+
 	// download latest orca cli tool
 	oc_str8 tool_url = oc_path_append(scratch.arena, repo_url_base, 
 		OC_STR8("/releases/latest/download/orca-cli-tool-mac-universal.tar.gz"));
-	oc_str8 tarball_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("tool.tar.gz"));
+	oc_str8 tarball_path = oc_path_append(scratch.arena, temp_dir, OC_STR8("tool.tar.gz"));
 	CURLcode curl_code = download_file(curl, tool_url, tarball_path);
 	if(curl_code != CURLE_OK)
 	{
@@ -342,12 +348,6 @@ static int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str
 				tool_url.ptr, curl_last_error(curl_code));
 		result = 1;
 		goto cleanup;
-	}
-
-	oc_str8 temp_dir = oc_path_append(scratch.arena, orca_dir, OC_STR8("temporary"));
-	if(!oc_sys_exists(temp_dir))
-	{
-		TRY(oc_sys_mkdirs(temp_dir));
 	}
 
 	if(!tarball_extract(tarball_path, temp_dir))
