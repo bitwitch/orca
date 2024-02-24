@@ -84,8 +84,7 @@ int update(int argc, char** argv)
 	oc_str8 final_url = oc_str8_push_cstring(&arena, final_url_cstr);
 
 	oc_str8 version = oc_path_slice_filename(final_url);
-	oc_str8 exe_path = oc_path_executable(&arena);
-	oc_str8 orca_dir = oc_path_slice_directory(exe_path);
+	oc_str8 orca_dir = system_orca_dir(&arena);
     oc_str8 version_dir = oc_path_append(&arena, orca_dir, version);
 
 	if (oc_sys_exists(version_dir)) {
@@ -241,8 +240,7 @@ static bool overwrite_current_version(oc_str8 new_version)
 {
 	bool result = true;
 	oc_arena_scope scratch = oc_scratch_begin();
-	oc_str8 exe_path = oc_path_executable(scratch.arena);
-	oc_str8 orca_dir = oc_path_slice_directory(exe_path);
+	oc_str8 orca_dir = system_orca_dir(scratch.arena);
 	oc_str8 current_version_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("current_version"));
 	oc_file file = oc_file_open(current_version_path, OC_FILE_ACCESS_WRITE, 
 		OC_FILE_OPEN_CREATE|OC_FILE_OPEN_TRUNCATE);

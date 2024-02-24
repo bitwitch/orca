@@ -118,7 +118,7 @@ int winBundle(
     //-----------------------------------------------------------
     //NOTE: make bundle directory structure
     //-----------------------------------------------------------
-	oc_str8 orcaDir = get_current_version_dir(a);
+    oc_str8 orcaDir = current_version_dir(a);
     oc_str8 bundleDir = oc_path_append(a, outDir, name);
     oc_str8 exeDir = oc_path_append(a, bundleDir, OC_STR8("bin"));
     oc_str8 resDir = oc_path_append(a, bundleDir, OC_STR8("resources"));

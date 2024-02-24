@@ -36,8 +36,8 @@ int version(int argc, char** argv)
         return 1;
     }
 
-    oc_str8 version_dir = get_current_version_dir(&a);
-	oc_str8 version = oc_path_slice_filename(version_dir);
+    oc_str8 version_dir = current_version_dir(&a);
+    oc_str8 version = oc_path_slice_filename(version_dir);
 
     printf("Orca CLI tool version: %.*s\n", oc_str8_ip(version));
 

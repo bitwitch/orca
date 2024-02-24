@@ -36,7 +36,7 @@ int sdkPath(int argc, char** argv)
         return 1;
     }
 
-    oc_str8 version_dir = get_current_version_dir(&a);
+    oc_str8 version_dir = current_version_dir(&a);
     oc_str8 sdk_dir = oc_path_canonical(&a, version_dir);
 
     printf("%.*s", oc_str8_ip(sdk_dir));

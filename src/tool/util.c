@@ -9,10 +9,15 @@
 #include "orca.h"
 #include "util.h"
 
-oc_str8 get_current_version_dir(oc_arena* a)
+oc_str8 system_orca_dir(oc_arena* a)
 {
 	oc_str8 exe_path = oc_path_executable(a);
-	oc_str8 orca_dir = oc_path_slice_directory(exe_path);
+	return oc_path_slice_directory(exe_path);
+}
+
+oc_str8 current_version_dir(oc_arena* a)
+{
+	oc_str8 orca_dir = system_orca_dir(a);
 
     oc_str8 current_file_path = oc_path_append(a, orca_dir, OC_STR8("current_version"));
 	oc_file file = oc_file_open(current_file_path, OC_FILE_ACCESS_READ, OC_FILE_OPEN_NONE);
