@@ -20,7 +20,7 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          orcadev.bat build-tool
+          orcadev.bat build-tool --release
 
       - uses: actions/upload-artifact@v4
         with:
@@ -37,7 +37,7 @@ jobs:
           python-version: '3.10' 
 
       - name: Build
-        run: ./orcadev build-tool
+        run: ./orcadev build-tool --release
 
       # NOTE: tar is needed to maintain executable file permissions
       - name: Tar
@@ -60,7 +60,7 @@ jobs:
           #python-version: '3.10' 
 
       #- name: Build
-        #run: ./orcadev build-tool
+        #run: ./orcadev build-tool --release
       
         ## NOTE: tar is needed to maintain executable file permissions
       #- name: Tar
