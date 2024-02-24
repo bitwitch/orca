@@ -33,7 +33,7 @@ def attach_dev_commands(subparsers):
     clean_cmd = subparsers.add_parser("clean", help="Delete all build artifacts and start fresh.")
     clean_cmd.set_defaults(func=dev_shellish(clean))
 
-    install_cmd = subparsers.add_parser("install", help="Install the Orca tools into a system folder.")
+    install_cmd = subparsers.add_parser("install", help="Install a dev build of the Orca tools into the system Orca directory.")
     install_cmd.set_defaults(func=dev_shellish(install))
 
     uninstall_cmd = subparsers.add_parser("uninstall", help="Uninstall the system installation of Orca.")
@@ -703,12 +703,17 @@ def prompt(msg):
             print("Please enter \"yes\" or \"no\" and press return.")
 
 
-def install_dir():
-    if platform.system() == "Windows":
-        return os.path.join(os.getenv("LOCALAPPDATA"), "orca")
-    else:
-        return os.path.expanduser(os.path.join("~", ".orca"))
-
+def system_orca_dir():
+    try:
+        res = subprocess.run(["orca", "sdk-path"], check=True, capture_output=True, text=True)
+        sdk_path = res.stdout.strip()
+        return os.path.split(sdk_path)[0]
+    except subprocess.CalledProcessError:
+        print("You must install the Orca cli tool and add the directory where you") 
+        print("installed it to your PATH before the dev tooling can determine the")
+        print("system Orca directory. You can download the cli tool from:")
+        print("https://github.com/orca-app/orca/releases/latest")
+        exit(1)
 
 def install(args):
     if runtime_checksum_last() is None:
@@ -725,83 +730,50 @@ def install(args):
             return
         print()
 
-    # TODO: Check for the CLI tool
-
+    orca_dir = system_orca_dir()
     version = orca_version()
+    dest = os.path.join(orca_dir, version)
 
-    dest = install_dir()
-    tool_bin_dir = os.path.join(dest, "bin")
-    versions_dir = os.path.join(dest, "versions")
-    runtime_dir = os.path.join(versions_dir, version)
-    runtime_bin_dir = os.path.join(runtime_dir, "bin")
-    runtime_src_dir = os.path.join(runtime_dir, "src")
-    runtime_res_dir = os.path.join(runtime_dir, "resources")
+    bin_dir = os.path.join(dest, "bin")
+    libc_dir = os.path.join(dest, "orca-libc")
+    res_dir = os.path.join(dest, "resources")
+    src_dir = os.path.join(dest, "src")
 
-    yeetdir(tool_bin_dir)
-    yeetdir(runtime_dir)
-
-    # The MS Store version of Python does some really stupid stuff with AppData:
-    # https://git.handmade.network/hmn/orca/issues/32
-    #
-    # Any new files and folders created in AppData actually get created in a special
-    # folder specific to the Python version. However, if the files or folders already
-    # exist, the redirect does not happen. So, if we first use the shell to create the
-    # paths we need, the following scripts work regardless of Python install.
-    #
-    # Also apparently you can't just do mkdir in a subprocess call here, hence the
-    # trivial batch scripts.
-    if platform.system() == "Windows":
-        subprocess.run(["scripts\\mkdir.bat", tool_bin_dir], check=True)
-        subprocess.run(["scripts\\mkdir.bat", runtime_bin_dir], check=True)
-    else:
-        os.makedirs(tool_bin_dir, exist_ok=True)
-        os.makedirs(runtime_bin_dir, exist_ok=True)
+    yeetdir(dest)
+    os.makedirs(bin_dir, exist_ok=True)
+    os.makedirs(libc_dir, exist_ok=True)
+    os.makedirs(res_dir, exist_ok=True)
+    os.makedirs(src_dir, exist_ok=True)
 
     tool_path = "build\\bin\\orca.exe" if platform.system() == "Windows" else "build/bin/orca"
 
-    shutil.copy(tool_path, tool_bin_dir)
-    shutil.copytree("src", runtime_src_dir, dirs_exist_ok=True)
-    shutil.copytree("resources", runtime_res_dir, dirs_exist_ok=True)
+    shutil.copy(tool_path, bin_dir)
+    shutil.copytree("src", src_dir, dirs_exist_ok=True)
+    shutil.copytree("resources", res_dir, dirs_exist_ok=True)
     if platform.system() == "Windows":
-        shutil.copy("build\\bin\\orca.dll", runtime_bin_dir)
-        shutil.copy("build\\bin\\orca_runtime.exe", runtime_bin_dir)
-        shutil.copy("src\\ext\\angle\\bin\\libEGL.dll", runtime_bin_dir)
-        shutil.copy("src\\ext\\angle\\bin\\libGLESv2.dll", runtime_bin_dir)
+        shutil.copy("build\\bin\\orca.dll", bin_dir)
+        shutil.copy("build\\bin\\orca.dll.lib", bin_dir)
+        shutil.copy("build\\bin\\wasm3.lib", bin_dir)
+        shutil.copy("build\\bin\\runtime.obj", bin_dir)
+        shutil.copy("src\\ext\\angle\\bin\\libEGL.dll", bin_dir)
+        shutil.copy("src\\ext\\angle\\bin\\libGLESv2.dll", bin_dir)
     else:
-        shutil.copy("build/bin/liborca.dylib", runtime_bin_dir)
-        shutil.copy("build/bin/mtl_renderer.metallib", runtime_bin_dir)
-        shutil.copy("build/bin/orca_runtime", runtime_bin_dir)
-        shutil.copy("src/ext/angle/bin/libEGL.dylib", runtime_bin_dir)
-        shutil.copy("src/ext/angle/bin/libGLESv2.dylib", runtime_bin_dir)
+        shutil.copy("build/bin/liborca.dylib", bin_dir)
+        shutil.copy("build/bin/mtl_renderer.metallib", bin_dir)
+        shutil.copy("build/bin/orca_runtime", bin_dir)
+        shutil.copy("src/ext/angle/bin/libEGL.dylib", bin_dir)
+        shutil.copy("src/ext/angle/bin/libGLESv2.dylib", bin_dir)
 
-    with open(os.path.join(versions_dir, "current"), "w") as f:
+    shutil.copy(tool_path, orca_dir)
+
+    with open(os.path.join(orca_dir, "current_version"), "w") as f:
         f.write(version)
 
+    # TODO(shaw): should dev versions and their checksums be added to all_versions file?
+
     print()
-    print("The Orca tooling has been installed to the following directory:")
-    print(tool_bin_dir)
-    print()
-    print(f"The Orca runtime (version {version}) has been installed to the following directory:")
-    print(runtime_dir)
-    if platform.system() == "Windows":
-        print()
-        print("The tool will need to be on your PATH in order to actually use it.")
-        if prompt("Would you like to automatically add Orca to your PATH?"):
-            try:
-                subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "scripts\\updatepath.ps1", f'"{tool_bin_dir}"'], check=True)
-                print("Orca has been added to your PATH. Restart any open terminals to use it.")
-            except subprocess.CalledProcessError:
-                msg = log_warning(f"Failed to automatically add Orca to your PATH.")
-                msg.more("Please manually add the following directory to your PATH:")
-                msg.more(tool_bin_dir)
-        else:
-            print("No worries. You can manually add Orca to your PATH in the Windows settings")
-            print("by searching for \"environment variables\".")
-    else:
-        print()
-        print("Make sure the Orca tools are on your PATH by adding the following to your shell config:")
-        print()
-        print(f"export PATH=\"{tool_bin_dir}:$PATH\"")
+    print("A dev build of Orca has been installed to the following directory:")
+    print(dest)
     print()
 
 
