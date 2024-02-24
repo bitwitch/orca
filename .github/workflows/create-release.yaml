@@ -44,6 +44,8 @@ jobs:
             mkdir -p orca-win/src
             # gather fonts
             cp repo/resources/* orca-win/resources
+            # gather cli-tool
+            cp artifacts/orca.exe orca-win/bin
             # gather runtime
             cd artifacts
             tar -xzf orca-runtime-win.tar.gz
@@ -71,6 +73,11 @@ jobs:
             mkdir -p orca-mac-x64/src
             # gather fonts
             cp repo/resources/* orca-mac-x64/resources
+            # gather cli-tool
+            cd artifacts
+            tar -xzf orca-cli-tool-mac-universal.tar.gz
+            cd ..
+            cp artifacts/orca orca-mac-x64/bin
             # gather runtime
             cd artifacts
             tar -xzf orca-runtime-mac-x64.tar.gz
@@ -97,6 +104,11 @@ jobs:
             #mkdir -p orca-mac-arm64/src
             ## gather fonts
             #cp repo/resources/* orca-mac-arm64/resources
+            ## gather cli-tool
+            #cd artifacts
+            #tar -xzf orca-cli-tool-mac-universal.tar.gz
+            #cd ..
+            #cp artifacts/orca orca-mac-arm64/bin
             ## gather runtime
             #cd artifacts
             #tar -xzf orca-runtime-mac-arm64.tar.gz
