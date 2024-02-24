@@ -50,33 +50,32 @@ jobs:
           name: orca-cli-tool-mac-x64
           path: orca-cli-tool-mac-x64.tar.gz
 
-  #build-macos-arm64:
-    #runs-on: [self-hosted, macos]
-    #steps:
-      #- uses: actions/checkout@v4
+  build-macos-arm64:
+    runs-on: [self-hosted, macos]
+    steps:
+      - uses: actions/checkout@v4
 
-      #- uses: actions/setup-python@v4
-        #with:
-          #python-version: '3.10' 
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
 
-      #- name: Build
-        #run: ./orcadev build-tool --release
+      - name: Build
+        run: ./orcadev build-tool --release
       
-        ## NOTE: tar is needed to maintain executable file permissions
-      #- name: Tar
-        #run: |
-          #cp build/bin/orca orca
-          #tar -czf orca-cli-tool-mac-arm64.tar.gz orca
+        # NOTE: tar is needed to maintain executable file permissions
+      - name: Tar
+        run: |
+          cp build/bin/orca orca
+          tar -czf orca-cli-tool-mac-arm64.tar.gz orca
 
-      #- uses: actions/upload-artifact@v4
-        #with:
-          #name: orca-cli-tool-mac-arm64
-          #path: orca-cli-tool-mac-arm64.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: orca-cli-tool-mac-arm64
+          path: orca-cli-tool-mac-arm64.tar
   
   mac-make-universal:
     runs-on: macos-latest
-    #needs: [build-macos-x64, build-macos-arm64]
-    needs: [build-macos-x64]
+    needs: [build-macos-x64, build-macos-arm64]
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -85,23 +84,22 @@ jobs:
         with:
           name: orca-cli-tool-mac-x64
 
-      #- uses: actions/download-artifact@v4
-        #with:
-          #name: orca-cli-tool-mac-arm64
+      - uses: actions/download-artifact@v4
+        with:
+          name: orca-cli-tool-mac-arm64
       
       - name: Untar
         run: |
           tar -xzf orca-cli-tool-mac-x64.tar.gz
           mv orca orca-mac-x64
-          #tar -xzf orca-cli-tool-mac-arm64.tar.gz
-          #mv orca orca-mac-arm64
+          tar -xzf orca-cli-tool-mac-arm64.tar.gz
+          mv orca orca-mac-arm64
       
       - name: Make universal binary
         run: |
           chmod +x orca-mac-x64
-          #chmod +x orca-mac-arm64
-          #lipo -create orca-mac-x64 orca-mac-arm64 -output orca
-          lipo -create orca-mac-x64 -output orca
+          chmod +x orca-mac-arm64
+          lipo -create orca-mac-x64 orca-mac-arm64 -output orca
       
       - name: Tar
         run: |
