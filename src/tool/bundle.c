@@ -248,7 +248,7 @@ int macBundle(
     oc_str8_list_push(a, &list, OC_STR8(".app"));
     name = oc_str8_list_join(a, list);
 
-	oc_str8 orcaDir = get_current_version_dir(a);
+	oc_str8 orcaDir = current_version_dir(a);
     oc_str8 bundleDir = oc_path_append(a, outDir, name);
     oc_str8 contentsDir = oc_path_append(a, bundleDir, OC_STR8("Contents"));
     oc_str8 exeDir = oc_path_append(a, contentsDir, OC_STR8("MacOS"));
