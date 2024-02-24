@@ -26,41 +26,13 @@
 	#error Unsupported platform
 #endif
 
-static size_t curl_callback_write_to_file(char *data, size_t size, size_t nmemb, void *userdata) 
-{
-	oc_file *file = (oc_file *)userdata;
-	return oc_file_write(*file, size * nmemb, data);
-}
-
 static char curl_errbuf[CURL_ERROR_SIZE]; // buffer for last curl error message 
 
-static const char *curl_last_error(CURLcode code) 
-{
-	// if there is no message in curl_errbuf, then fall back to the less
-	// detailed error message from the CURLcode
-	u64 len = strlen(curl_errbuf);
-	return len ? curl_errbuf : curl_easy_strerror(code);
-}
-
-static CURLcode download_file(CURL *handle, oc_str8 url, oc_str8 out_path) 
-{
-	oc_file file = oc_file_open(out_path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
-	if (oc_file_is_nil(file)) {
-		oc_file_close(file);
-		return CURLE_WRITE_ERROR;
-	}
-
-	curl_easy_reset(handle);
-	curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, curl_errbuf);
-	curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1);
-	curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1); 
-	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curl_callback_write_to_file);
-	curl_easy_setopt(handle, CURLOPT_WRITEDATA, &file);
-	curl_easy_setopt(handle, CURLOPT_URL, url.ptr);
-	CURLcode err = curl_easy_perform(handle);
-	oc_file_close(file);
-	return err;
-}
+size_t curl_callback_write_to_file(char *data, size_t size, size_t nmemb, void *userdata);
+const char *curl_last_error(CURLcode code);
+CURLcode download_file(CURL *handle, oc_str8 url, oc_str8 out_path);
+bool overwrite_current_version(oc_str8 new_version);
+int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str8 orca_dir, oc_str8 old_version, oc_str8 new_version);
 
 int update(int argc, char** argv)
 {
@@ -128,6 +100,35 @@ int update(int argc, char** argv)
 	TRY(oc_sys_mkdirs(temp_dir));
 
 	//-----------------------------------------------------------------------------
+	// update cli tool executable
+	//-----------------------------------------------------------------------------
+	{
+		oc_str8 current_version_path = oc_path_append(&arena, orca_dir, OC_STR8("current_version"));
+		oc_file file = oc_file_open(current_version_path, OC_FILE_ACCESS_READ, OC_FILE_OPEN_NONE);
+		if(oc_file_is_nil(file))
+		{
+			fprintf(stderr, "error: failed to identify current Orca version\n");
+			return 1;
+		}
+		oc_str8 current_version = {0};
+		current_version.len = oc_file_size(file);
+		current_version.ptr = oc_arena_push(&arena, current_version.len + 1);
+		oc_file_read(file, current_version.len, current_version.ptr);
+		if(oc_file_last_error(file) != OC_IO_OK)
+		{
+			fprintf(stderr, "error: failed to identify current Orca version\n");
+			return 1;
+		}
+		oc_file_close(file);
+
+		current_version = oc_str8_trim_space(current_version);
+		if(oc_str8_cmp(current_version, version) != 0)
+		{
+			return replace_yourself_and_update(curl, repo_url_base, orca_dir, current_version, version);
+		}
+	}
+
+	//-----------------------------------------------------------------------------
 	// download and extract latest version
 	//-----------------------------------------------------------------------------
 	{
@@ -189,15 +190,9 @@ int update(int argc, char** argv)
 		}
 	}
 
+	if(!overwrite_current_version(version))
 	{
-		oc_str8 current_version = oc_path_append(&arena, orca_dir, OC_STR8("current_version"));
-		oc_file file = oc_file_open(current_version, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
-		if (!oc_file_is_nil(file)) {
-			oc_file_write(file, version.len, version.ptr);
-		} else {
-			fprintf(stderr, "error: failed to open file %s\n", current_version.ptr);
-		}
-		oc_file_close(file);
+		fprintf(stderr, "error: failed to update current version file\n");
 	}
 
 	TRY(oc_sys_rmdir(temp_dir));
@@ -207,4 +202,205 @@ int update(int argc, char** argv)
 
 	return 0;
 }
+
+static size_t curl_callback_write_to_file(char *data, size_t size, size_t nmemb, void *userdata) 
+{
+	oc_file *file = (oc_file *)userdata;
+	return oc_file_write(*file, size * nmemb, data);
+}
+
+static const char *curl_last_error(CURLcode code) 
+{
+	// if there is no message in curl_errbuf, then fall back to the less
+	// detailed error message from the CURLcode
+	u64 len = strlen(curl_errbuf);
+	return len ? curl_errbuf : curl_easy_strerror(code);
+}
+
+static CURLcode download_file(CURL *handle, oc_str8 url, oc_str8 out_path) 
+{
+	oc_file file = oc_file_open(out_path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE|OC_FILE_OPEN_TRUNCATE);
+	if (oc_file_is_nil(file)) {
+		oc_file_close(file);
+		return CURLE_WRITE_ERROR;
+	}
+
+	curl_easy_reset(handle);
+	curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, curl_errbuf);
+	curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1);
+	curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1); 
+	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curl_callback_write_to_file);
+	curl_easy_setopt(handle, CURLOPT_WRITEDATA, &file);
+	curl_easy_setopt(handle, CURLOPT_URL, url.ptr);
+	CURLcode err = curl_easy_perform(handle);
+	oc_file_close(file);
+	return err;
+}
+
+static bool overwrite_current_version(oc_str8 new_version)
+{
+	bool result = true;
+	oc_arena_scope scratch = oc_scratch_begin();
+	oc_str8 exe_path = oc_path_executable(scratch.arena);
+	oc_str8 orca_dir = oc_path_slice_directory(exe_path);
+	oc_str8 current_version_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("current_version"));
+	oc_file file = oc_file_open(current_version_path, OC_FILE_ACCESS_WRITE, 
+		OC_FILE_OPEN_CREATE|OC_FILE_OPEN_TRUNCATE);
+	if(oc_file_is_nil(file))
+	{
+		result = false;
+		goto cleanup;
+	}
+
+	oc_file_write(file, new_version.len, new_version.ptr);
+	if(oc_file_last_error(file) != OC_IO_OK)
+	{
+		result = false;
+		goto cleanup;
+	}
+
+cleanup:
+	oc_file_close(file);
+	oc_scratch_end(scratch);
+	return result;
+}
+
+
+#if OC_PLATFORM_WINDOWS
+static int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str8 orca_dir, 
+                                       oc_str8 old_version, oc_str8 new_version)
+{
+	int result = 0;
+	oc_arena_scope scratch = oc_scratch_begin();
+
+	// download latest orca cli tool
+	oc_str8 tool_url = oc_path_append(scratch.arena, repo_url_base, 
+		OC_STR8("/releases/latest/download/orca.exe"));
+	oc_str8 new_tool_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("latest_orca.exe"));
+	CURLcode curl_code = download_file(curl, tool_url, new_tool_path);
+	if(curl_code != CURLE_OK)
+	{
+		fprintf(stderr, "error: failed to download file %s: %s\n", 
+				tool_url.ptr, curl_last_error(curl_code));
+		result = 1;
+		goto cleanup;
+	}
+
+	// write new version to current_version file
+	if(!overwrite_current_version(new_version))
+	{
+		fprintf(stderr, "error: failed to update current version file\n");
+		result = 1;
+		goto cleanup;
+	}
+
+	// execute orca update with newer cli tool 
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, "%s update", new_tool_path.ptr);
+	result = system(cmd.ptr);
+	if(result)
+	{
+		overwrite_current_version(old_version);
+		goto cleanup;
+	}
+
+	// replace old tool with new
+	// NOTE(shaw): the currently executing cli tool can only be renamed, not deleted
+	// so it is renamed to old_orca.exe, and subsequent updates will delete it
+	oc_str8 old_rename_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("old_orca.exe"));
+	remove(old_rename_path.ptr);
+	oc_str8 old_tool_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("orca.exe"));
+	rename(old_tool_path.ptr, old_rename_path.ptr);
+	result = rename(new_tool_path.ptr, old_tool_path.ptr);
+	if(result)
+	{
+		fprintf(stderr, "error: failed to replace Orca cli tool with latest version\n");
+		overwrite_current_version(old_version);
+		goto cleanup;
+	}
+
+cleanup:
+	oc_scratch_end(scratch);
+	return result;
+}
+
+#elif OC_PLATFORM_MACOS
+
+static int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str8 orca_dir, 
+                                       oc_str8 old_version, oc_str8 new_version)
+{
+	int result = 0;
+	oc_arena_scope scratch = oc_scratch_begin();
+
+	// download latest orca cli tool
+	oc_str8 tool_url = oc_path_append(scratch.arena, repo_url_base, 
+		OC_STR8("/releases/latest/download/orca-cli-tool-mac-universal.tar.gz"));
+	oc_str8 tarball_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("tool.tar.gz"));
+	CURLcode curl_code = download_file(curl, tool_url, tarball_path);
+	if(curl_code != CURLE_OK)
+	{
+		fprintf(stderr, "error: failed to download file %s: %s\n", 
+				tool_url.ptr, curl_last_error(curl_code));
+		result = 1;
+		goto cleanup;
+	}
+
+	oc_str8 temp_dir = oc_path_append(scratch.arena, orca_dir, OC_STR8("temporary"));
+	if(!oc_sys_exists(temp_dir))
+	{
+		TRY(oc_sys_mkdirs(temp_dir));
+	}
+
+	if(!tarball_extract(tarball_path, temp_dir))
+	{
+		fprintf(stderr, "error: failed to extract orca cli tool from tarball\n");
+	}
+
+	oc_str8 temp_dir_orca = oc_path_append(scratch.arena, temp_dir, OC_STR8("orca"));
+	oc_str8 new_tool_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("latest_orca"));
+	TRY(oc_sys_move(temp_dir_orca, new_tool_path));
+
+	// write new version to current_version file
+	if(!overwrite_current_version(new_version))
+	{
+		fprintf(stderr, "error: failed to update current version file\n");
+		result = 1;
+		goto cleanup;
+	}
+
+	// execute orca update with newer cli tool 
+	oc_str8 cmd = oc_str8_pushf(scratch.arena, "%s update", new_tool_path.ptr);
+	result = system(cmd.ptr);
+	if(result)
+	{
+		overwrite_current_version(old_version);
+		goto cleanup;
+	}
+
+	// replace old tool with new
+	// NOTE(shaw): the currently executing cli tool can only be renamed, not deleted
+	// so it is renamed to old_orca, and subsequent updates will delete it
+	oc_str8 old_rename_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("old_orca"));
+	remove(old_rename_path.ptr);
+	oc_str8 old_tool_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("orca"));
+	rename(old_tool_path.ptr, old_rename_path.ptr);
+	result = rename(new_tool_path.ptr, old_tool_path.ptr);
+	if(result)
+	{
+		fprintf(stderr, "error: failed to replace Orca cli tool with latest version\n");
+		overwrite_current_version(old_version);
+		goto cleanup;
+	}
+
+cleanup:
+	if(oc_sys_exists(temp_dir))
+	{
+		oc_sys_rmdir(temp_dir);
+	}
+	oc_scratch_end(scratch);
+	return result;
+}
+#else
+	#error replace_yourself_and_update() not implemented on this platform
+#endif
+
 

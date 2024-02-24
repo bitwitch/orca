@@ -182,6 +182,7 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
     return true;
 }
 
+// NOTE: if dst is a filename and it already exists, it will be overwritten
 bool oc_sys_move(oc_str8 src, oc_str8 dst) 
 {
 	if(!oc_sys_exists(src)) 
@@ -196,7 +197,7 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst)
 	oc_str8 full_src = oc_path_canonical(scratch.arena, src);
 	oc_str8 full_dst = oc_path_canonical(scratch.arena, dst);
 	oc_str8 cmd = oc_str8_pushf(scratch.arena, 
-		"move \"%.*s\" \"%.*s\"", 
+		"move /Y \"%.*s\" \"%.*s\"",
 		oc_str8_ip(full_src), oc_str8_ip(full_dst));
 	int result = system(cmd.ptr);
 	oc_scratch_end(scratch);
