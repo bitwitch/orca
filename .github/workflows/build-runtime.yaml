@@ -48,7 +48,7 @@ jobs:
           ./orcadev build-runtime --release
           mv build orca-runtime-mac-x64
           mv src src-mac-x64
-          tar -czf orca-runtime-mac-x64.tar.gz orca-runtime-mac-x64 src-mac-x64
+          tar --format=ustar -czf orca-runtime-mac-x64.tar.gz orca-runtime-mac-x64 src-mac-x64
 
       - uses: actions/upload-artifact@v4
         with:
@@ -69,7 +69,7 @@ jobs:
           #./orcadev build-runtime --release
           #mv build orca-runtime-mac-arm64
           #mv src src-mac-arm64
-          #tar -czf orca-runtime-mac-arm64.tar.gz orca-runtime-mac-arm64 src-mac-arm64
+          #tar --format=ustar -czf orca-runtime-mac-arm64.tar.gz orca-runtime-mac-arm64 src-mac-arm64
 
       #- uses: actions/upload-artifact@v4
         #with:
