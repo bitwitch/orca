@@ -36,9 +36,6 @@ def attach_dev_commands(subparsers):
     install_cmd = subparsers.add_parser("install", help="Install a dev build of the Orca tools into the system Orca directory.")
     install_cmd.set_defaults(func=dev_shellish(install))
 
-    uninstall_cmd = subparsers.add_parser("uninstall", help="Uninstall the system installation of Orca.")
-    uninstall_cmd.set_defaults(func=dev_shellish(uninstall))
-
 
 def dev_shellish(func):
     source_dir = get_source_root()
@@ -794,43 +791,7 @@ def get_source_root():
         dir = newdir
 
 
-def install_path():
-    if platform.system() == "Windows":
-        orca_dir = os.path.join(os.getenv("LOCALAPPDATA"), "orca")
-    else:
-        orca_dir = os.path.expanduser(os.path.join("~", ".orca"))
-
-    bin_dir = os.path.join(orca_dir, "bin")
-
-    return (orca_dir, bin_dir)
-
-
 def yeet(path):
     os.makedirs(path, exist_ok=True)
     shutil.rmtree(path)
 
-
-def uninstall(args):
-    orca_dir, bin_dir = install_path()
-
-    if not os.path.exists(orca_dir):
-        print("Orca is not installed on your system.")
-        exit()
-
-    print(f"Orca is currently installed at {orca_dir}.")
-    if prompt("Are you sure you want to uninstall?"):
-        yeet(orca_dir)
-
-        if platform.system() == "Windows":
-            print("Orca has been uninstalled from your system.")
-            print()
-            if prompt("Would you like to automatically remove Orca from your PATH?"):
-                try:
-                    subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "scripts\\updatepath.ps1", f'"{bin_dir}"', "-remove"], check=True)
-                    print("Orca has been removed from your PATH.")
-                except subprocess.CalledProcessError:
-                    msg = log_warning(f"Failed to automatically remove Orca from your PATH.")
-                    msg.more("Please manually remove the following directory from your PATH:")
-                    msg.more(bin_dir)
-        else:
-            print("Orca has been uninstalled from your system. You may wish to remove it from your PATH.")
