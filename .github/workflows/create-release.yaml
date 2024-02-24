@@ -60,7 +60,7 @@ jobs:
             # generate checksum file
             find orca-win -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
             # create release tarball
-            tar -czf orca-win.tar.gz orca-win sha1.sum
+            tar --format=ustar -czf orca-win.tar.gz orca-win sha1.sum
             mv orca-win.tar.gz releases
 
         - name: Package Mac x64 Release
@@ -86,7 +86,7 @@ jobs:
             # generate checksum file
             find orca-mac-x64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
             # create release tarball
-            tar -czf orca-mac-x64.tar.gz orca-mac-x64 sha1.sum
+            tar --format=ustar -czf orca-mac-x64.tar.gz orca-mac-x64 sha1.sum
             mv orca-mac-x64.tar.gz releases
 
         #- name: Package Mac arm64 Release
@@ -112,7 +112,7 @@ jobs:
             ## generate checksum file
             #find orca-mac-arm64 -type f -exec sha1sum {} + | LC_ALL=C sort | sha1sum | cut -z -f 1 -d " " > sha1.sum
             ## create release tarball
-            #tar -czf orca-mac-arm64.tar.gz orca-mac-arm64 sha1.sum
+            #tar --format=ustar -czf orca-mac-arm64.tar.gz orca-mac-arm64 sha1.sum
             #mv orca-mac-arm64.tar.gz releases
 
         - uses: ncipollo/release-action@v1

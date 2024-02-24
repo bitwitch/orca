@@ -105,7 +105,7 @@ jobs:
       
       - name: Tar
         run: |
-          tar -czf orca-cli-tool-mac-universal.tar.gz orca
+          tar --format=ustar -czf orca-cli-tool-mac-universal.tar.gz orca
 
       - uses: actions/upload-artifact@v4
         with:
