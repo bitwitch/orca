@@ -11,6 +11,7 @@
 
 #include "flag.h"
 #include "orca.h"
+#include "util.h"
 #include "system.h"
 
 #if OC_PLATFORM_WINDOWS
@@ -24,6 +25,7 @@ int winBundle(
     oc_str8 version,
     oc_str8_list resource_files,
     oc_str8_list resource_dirs,
+    oc_str8 app_version,
     oc_str8 outDir,
     oc_str8 module);
 
@@ -34,6 +36,7 @@ int macBundle(
     oc_str8 version,
     oc_str8_list resource_files,
     oc_str8_list resource_dirs,
+    oc_str8 app_version,
     oc_str8 outDir,
     oc_str8 module,
 	bool mtlEnableCapture);
@@ -50,9 +53,10 @@ int bundle(int argc, char** argv)
 
     char** name = flag_str(&c, "n", "name", "out", "the app's name");
     char** icon = flag_str(&c, "i", "icon", NULL, "an image file to use as the application's icon");
-    char** version = flag_str(&c, NULL, "version", "0.0.0", "a version number to embed in the application bundle");
+    char** version = flag_str(&c, "v", "version", NULL, "select a specific version of the Orca SDK (default is latest version)");
     oc_str8_list* resource_files = flag_strs(&c, "d", "resource", "copy a file to the app's resource directory");
     oc_str8_list* resource_dirs = flag_strs(&c, "D", "resource-dir", "copy the contents of a folder to the app's resource directory");
+    char** app_version = flag_str(&c, NULL, "app-version", "0.0.0", "a version number to embed in the application bundle");
     char** outDir = flag_str(&c, "C", "out-dir", NULL, "where to place the final application bundle (defaults to the current directory)");
     bool* mtlEnableCapture = flag_bool(&c, "M", "mtl-enable-capture", false, "enable Metal frame capture in Xcode for the application bundle (macOS only)");
 
@@ -85,6 +89,7 @@ int bundle(int argc, char** argv)
         OC_STR8(*version),
         *resource_files,
         *resource_dirs,
+        OC_STR8(*app_version),
         OC_STR8(*outDir),
         OC_STR8(*module));
 #elif OC_PLATFORM_MACOS
@@ -95,6 +100,7 @@ int bundle(int argc, char** argv)
         OC_STR8(*version),
         *resource_files,
         *resource_dirs,
+        OC_STR8(*app_version),
         OC_STR8(*outDir),
         OC_STR8(*module),
 		*mtlEnableCapture);
@@ -112,13 +118,13 @@ int winBundle(
     oc_str8 version,
     oc_str8_list resource_files,
     oc_str8_list resource_dirs,
+    oc_str8 app_version,
     oc_str8 outDir,
     oc_str8 module)
 {
     //-----------------------------------------------------------
     //NOTE: make bundle directory structure
     //-----------------------------------------------------------
-    oc_str8 orcaDir = current_version_dir(a);
     oc_str8 bundleDir = oc_path_append(a, outDir, name);
     oc_str8 exeDir = oc_path_append(a, bundleDir, OC_STR8("bin"));
     oc_str8 resDir = oc_path_append(a, bundleDir, OC_STR8("resources"));
@@ -136,6 +142,10 @@ int winBundle(
     TRY(oc_sys_mkdirs(guestDir));
     TRY(oc_sys_mkdirs(wasmDir));
     TRY(oc_sys_mkdirs(dataDir));
+
+    oc_str8 sdk_dir = version.len > 0 
+        ?  get_version_dir(a, version, true)
+        : current_version_dir(a, true);
 
     //-----------------------------------------------------------
     //NOTE: link runtime objects and application icon into exe
@@ -166,7 +176,7 @@ int winBundle(
         }
 
         oc_str8 exe_out = oc_path_append(a, exeDir, oc_str8_pushf(a, "%.*s.exe", oc_str8_ip(name)));
-        oc_str8 libpath = oc_path_append(a, orcaDir, OC_STR8("bin"));
+        oc_str8 libpath = oc_path_append(a, sdk_dir, OC_STR8("bin"));
         oc_str8 cmd = oc_str8_pushf(a, "link.exe /nologo /LIBPATH:%s runtime.obj orca.dll.lib wasm3.lib %.*s /out:%s",
             libpath.ptr, oc_str8_ip(res_path), exe_out.ptr);
         i32 result = system(cmd.ptr);
@@ -181,9 +191,9 @@ int winBundle(
     //-----------------------------------------------------------
     //NOTE: copy orca libraries
     //-----------------------------------------------------------
-    oc_str8 orcaLib = oc_path_append(a, orcaDir, OC_STR8("bin/orca.dll"));
-    oc_str8 glesLib = oc_path_append(a, orcaDir, OC_STR8("src/ext/angle/bin/libGLESv2.dll"));
-    oc_str8 eglLib = oc_path_append(a, orcaDir, OC_STR8("src/ext/angle/bin/libEGL.dll"));
+    oc_str8 orcaLib = oc_path_append(a, sdk_dir, OC_STR8("bin/orca.dll"));
+    oc_str8 glesLib = oc_path_append(a, sdk_dir, OC_STR8("src/ext/angle/bin/libGLESv2.dll"));
+    oc_str8 eglLib = oc_path_append(a, sdk_dir, OC_STR8("src/ext/angle/bin/libEGL.dll"));
 
     TRY(oc_sys_copy(orcaLib, exeDir));
     TRY(oc_sys_copy(glesLib, exeDir));
@@ -225,8 +235,8 @@ int winBundle(
     //-----------------------------------------------------------
     //NOTE: copy runtime resources
     //-----------------------------------------------------------
-    TRY(oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo.ttf")), resDir));
-    TRY(oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo Bold.ttf")), resDir));
+    TRY(oc_sys_copy(oc_path_append(a, sdk_dir, OC_STR8("resources/Menlo.ttf")), resDir));
+    TRY(oc_sys_copy(oc_path_append(a, sdk_dir, OC_STR8("resources/Menlo Bold.ttf")), resDir));
 
     return 0;
 }
@@ -239,6 +249,7 @@ int macBundle(
     oc_str8 version,
     oc_str8_list resource_files,
     oc_str8_list resource_dirs,
+    oc_str8 app_version,
     oc_str8 outDir,
     oc_str8 module,
 	bool mtlEnableCapture)
@@ -251,7 +262,6 @@ int macBundle(
     oc_str8_list_push(a, &list, OC_STR8(".app"));
     name = oc_str8_list_join(a, list);
 
-	oc_str8 orcaDir = current_version_dir(a);
     oc_str8 bundleDir = oc_path_append(a, outDir, name);
     oc_str8 contentsDir = oc_path_append(a, bundleDir, OC_STR8("Contents"));
     oc_str8 exeDir = oc_path_append(a, contentsDir, OC_STR8("MacOS"));
@@ -272,14 +282,18 @@ int macBundle(
     TRY(oc_sys_mkdirs(wasmDir));
     TRY(oc_sys_mkdirs(dataDir));
 
+    oc_str8 sdk_dir = version.len > 0
+        ?  get_version_dir(a, version, true)
+        : current_version_dir(a, true);
+
     //-----------------------------------------------------------
     //NOTE: copy orca runtime executable and libraries
     //-----------------------------------------------------------
-    oc_str8 orcaExe = oc_path_append(a, orcaDir, OC_STR8("bin/orca_runtime"));
-    oc_str8 orcaLib = oc_path_append(a, orcaDir, OC_STR8("bin/liborca.dylib"));
-    oc_str8 glesLib = oc_path_append(a, orcaDir, OC_STR8("src/ext/angle/bin/libGLESv2.dylib"));
-    oc_str8 eglLib = oc_path_append(a, orcaDir, OC_STR8("src/ext/angle/bin/libEGL.dylib"));
-    oc_str8 renderer_lib = oc_path_append(a, orcaDir, OC_STR8("bin/mtl_renderer.metallib"));
+    oc_str8 orcaExe = oc_path_append(a, sdk_dir, OC_STR8("bin/orca_runtime"));
+    oc_str8 orcaLib = oc_path_append(a, sdk_dir, OC_STR8("bin/liborca.dylib"));
+    oc_str8 glesLib = oc_path_append(a, sdk_dir, OC_STR8("src/ext/angle/bin/libGLESv2.dylib"));
+    oc_str8 eglLib = oc_path_append(a, sdk_dir, OC_STR8("src/ext/angle/bin/libEGL.dylib"));
+    oc_str8 renderer_lib = oc_path_append(a, sdk_dir, OC_STR8("bin/mtl_renderer.metallib"));
 
     TRY(oc_sys_copy(orcaExe, exeDir));
     TRY(oc_sys_copy(orcaLib, exeDir));
@@ -326,8 +340,8 @@ int macBundle(
     //-----------------------------------------------------------
     //NOTE: copy runtime resources
     //-----------------------------------------------------------
-    TRY(oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo.ttf")), resDir));
-    TRY(oc_sys_copy(oc_path_append(a, orcaDir, OC_STR8("resources/Menlo Bold.ttf")), resDir));
+    TRY(oc_sys_copy(oc_path_append(a, sdk_dir, OC_STR8("resources/Menlo.ttf")), resDir));
+    TRY(oc_sys_copy(oc_path_append(a, sdk_dir, OC_STR8("resources/Menlo Bold.ttf")), resDir));
 
     //-----------------------------------------------------------
     //NOTE make icon
@@ -411,7 +425,7 @@ int macBundle(
 		oc_str8_ip(name),
 		oc_str8_ip(name),
 		oc_str8_ip(name),
-		oc_str8_ip(version),
+		oc_str8_ip(app_version),
 		oc_str8_ip(bundle_sig),
 		mtlEnableCapture ? "<key>MetalCaptureEnabled</key><true/>" : "");
 
