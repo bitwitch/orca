@@ -709,9 +709,9 @@ def prompt(msg):
 
 def system_orca_dir():
     try:
-        res = subprocess.run(["orca", "sdk-path"], check=True, capture_output=True, text=True)
-        sdk_path = res.stdout.strip()
-        return os.path.split(sdk_path)[0]
+        res = subprocess.run(["orca", "install-path"], check=True, capture_output=True, text=True)
+        install_path = res.stdout.strip()
+        return install_path
     except subprocess.CalledProcessError:
         print("You must install the Orca cli tool and add the directory where you") 
         print("installed it to your PATH before the dev tooling can determine the")

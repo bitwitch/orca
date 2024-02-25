@@ -25,6 +25,7 @@
 #include "util.c"
 #include "version.c"
 #include "sdk_path.c"
+#include "install_path.c"
 #include "bundle.c"
 #include "microtar.c"
 #include "tarball.c"
@@ -37,6 +38,7 @@ int main(int argc, char** argv)
     flag_init_context(&c);
 
     bool* doSdkPath = flag_command(&c, "sdk-path", "Print the path to the installed Orca SDK.");
+    bool* doInstallPath = flag_command(&c, "install-path", "Prints the path to the root directory where Orca is installed");
     bool* doBundle = flag_command(&c, "bundle", "Package a WebAssembly module into a standalone Orca application.");
     bool* doVersion = flag_command(&c, "version", "Print the current Orca version.");
     bool* doUpdate = flag_command(&c, "update", "Install the latest version of Orca.");
@@ -78,6 +80,10 @@ int main(int argc, char** argv)
     if(*doSdkPath)
     {
         return sdkPath(rest_argc, rest_argv);
+    }
+    else if(*doInstallPath)
+    {
+        return installPath(rest_argc, rest_argv);
     }
     else if(*doBundle)
     {
