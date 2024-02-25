@@ -26,6 +26,7 @@ def attach_dev_commands(subparsers):
     build_cmd.set_defaults(func=dev_shellish(build_runtime))
 
     tool_cmd = subparsers.add_parser("build-tool", help="Build the Orca CLI tool from source.")
+    tool_cmd.add_argument("--version", help="embed a version string in the Orca CLI tool (default is git commit hash)")
     tool_cmd.add_argument("--release", action="store_true", 
         help="compile Orca CLI tool in release mode (default is debug)")
     tool_cmd.set_defaults(func=dev_shellish(build_tool))
@@ -569,7 +570,7 @@ def build_zlib():
         exit(1)
 
 
-def build_tool_win(release, githash, outname):
+def build_tool_win(release, version, outname):
     includes = [ 
         "/I", "..",
         "/I", "../ext/stb",
@@ -610,6 +611,7 @@ def build_tool_win(release, githash, outname):
         "/DOC_NO_APP_LAYER",
         "/DOC_BUILD_DLL",
         "/DCURL_STATICLIB",
+        f"/DORCA_TOOL_VERSION={version}",
         "/MD",
         f"/Febuild/bin/{outname}",
         "main.c",
@@ -617,7 +619,7 @@ def build_tool_win(release, githash, outname):
         *libs,
     ], check=True)
 
-def build_tool_mac(release, githash, outname):
+def build_tool_mac(release, version, outname):
     includes = [ 
         "-I", "..",
         "-I", "../ext/curl/builds/static/include",
@@ -650,6 +652,7 @@ def build_tool_mac(release, githash, outname):
         "-D", "OC_NO_APP_LAYER",
         "-D", "OC_BUILD_DLL",
         "-D", "CURL_STATICLIB",
+        "-D", f"ORCA_TOOL_VERSION={version}",
         *libs,
         "-MJ", "build/main.json",
         "-o", f"build/bin/{outname}",
@@ -673,15 +676,19 @@ def build_tool(args):
 
     with pushd("src/tool"):
         os.makedirs("build/bin", exist_ok=True)
+        
+        if args.version == None:
+            res = subprocess.run(["git", "rev-parse", "--short", "HEAD"], check=True, capture_output=True, text=True)
+            version = res.stdout.strip()
+        else:
+            version = args.version
 
-        res = subprocess.run(["git", "rev-parse", "--short", "HEAD"], check=True, capture_output=True, text=True)
-        githash = res.stdout.strip()
         outname = "orca.exe" if platform.system() == "Windows" else "orca"
 
         if platform.system() == "Windows":
-            build_tool_win(args.release, githash, outname)
+            build_tool_win(args.release, version, outname)
         elif platform.system() == "Darwin":
-            build_tool_mac(args.release, githash, outname)
+            build_tool_mac(args.release, version, outname)
         else:
             log_error(f"can't build cli tool for unknown platform '{platform.system()}'")
             exit(1)

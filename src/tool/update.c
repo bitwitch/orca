@@ -100,36 +100,11 @@ int update(int argc, char** argv)
 	//-----------------------------------------------------------------------------
 	// update cli tool executable
 	//-----------------------------------------------------------------------------
-    oc_str8 current_version_path = oc_path_append(&arena, orca_dir, OC_STR8("current_version"));
-    if(oc_sys_exists(current_version_path))
+    oc_str8 current_tool_version = OC_STR8(TOSTRING(ORCA_TOOL_VERSION));
+    if(oc_str8_cmp(current_tool_version, version) != 0)
     {
-        oc_file file = oc_file_open(current_version_path, OC_FILE_ACCESS_READ, OC_FILE_OPEN_NONE);
-        if(oc_file_is_nil(file))
-        {
-            fprintf(stderr, "error: failed to identify current Orca version\n");
-            return 1;
-        }
-        oc_str8 current_version = {0};
-        current_version.len = oc_file_size(file);
-        current_version.ptr = oc_arena_push(&arena, current_version.len + 1);
-        oc_file_read(file, current_version.len, current_version.ptr);
-        if(oc_file_last_error(file) != OC_IO_OK)
-        {
-            fprintf(stderr, "error: failed to identify current Orca version\n");
-            return 1;
-        }
-        oc_file_close(file);
-
-        current_version = oc_str8_trim_space(current_version);
-        if(oc_str8_cmp(current_version, version) != 0)
-        {
-            return replace_yourself_and_update(curl, repo_url_base, orca_dir, current_version, version);
-        }
+        return replace_yourself_and_update(curl, repo_url_base, orca_dir, current_tool_version, version);
     }
-    // NOTE(shaw): if current_version file doesn't exist, then we assume that
-    // the user has just installed the cli tool for the first time, so proceed
-    // with downloading the latest version and writing that version to the
-    // current_version file
 
 	//-----------------------------------------------------------------------------
 	// download and extract latest version
@@ -288,20 +263,11 @@ static int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str
 		goto cleanup;
 	}
 
-	// write new version to current_version file
-	if(!overwrite_current_version(new_version))
-	{
-		fprintf(stderr, "error: failed to update current version file\n");
-		result = 1;
-		goto cleanup;
-	}
-
 	// execute orca update with newer cli tool 
 	oc_str8 cmd = oc_str8_pushf(scratch.arena, "%s update", new_tool_path.ptr);
 	result = system(cmd.ptr);
 	if(result)
 	{
-		overwrite_current_version(old_version);
 		goto cleanup;
 	}
 
@@ -316,7 +282,6 @@ static int replace_yourself_and_update(CURL *curl, oc_str8 repo_url_base, oc_str
 	if(result)
 	{
 		fprintf(stderr, "error: failed to replace Orca cli tool with latest version\n");
-		overwrite_current_version(old_version);
 		goto cleanup;
 	}
 

@@ -10,6 +10,13 @@
     #define _CRT_SECURE_NO_DEPRECATE
 #endif
 
+#ifndef ORCA_TOOL_VERSION
+    #define ORCA_TOOL_VERSION unknown
+#endif
+// I love C so much
+#define _TOSTRING(x) #x
+#define TOSTRING(x) _TOSTRING(x)
+
 #include <stdio.h>
 
 #include "flag.h"
