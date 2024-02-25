@@ -152,7 +152,7 @@ bool resource_file_from_icon(oc_arena *a, oc_str8 ico_path, oc_str8 res_path)
 		goto cleanup;
 	}
 
-	oc_str8 rc_contents = OC_STR8("IDI_ICON1 ICON icon.ico");
+	oc_str8 rc_contents = OC_STR8("orca_application_icon ICON icon.ico");
 	oc_file_write(rc_file, rc_contents.len, rc_contents.ptr);
 	if(oc_file_last_error(rc_file) != OC_IO_OK)
 	{

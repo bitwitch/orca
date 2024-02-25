@@ -141,39 +141,42 @@ int winBundle(
     //NOTE: link runtime objects and application icon into exe
     //-----------------------------------------------------------
 	{
-		oc_str8 temp_dir = oc_path_append(a, outDir, OC_STR8("temporary"));
-		if(oc_sys_exists(temp_dir))
-		{
-			TRY(oc_sys_rmdir(temp_dir));
-		}
-		TRY(oc_sys_mkdirs(temp_dir));
+        oc_str8 temp_dir = oc_path_append(a, outDir, OC_STR8("temporary"));
+        oc_str8 res_path = {0};
+        if(icon.len > 0)
+        {
+            if(oc_sys_exists(temp_dir))
+            {
+                TRY(oc_sys_rmdir(temp_dir));
+            }
+            TRY(oc_sys_mkdirs(temp_dir));
+            oc_str8 ico_path = oc_path_append(a, temp_dir, OC_STR8("icon.ico"));
+            if(!icon_from_image(a, icon, ico_path))
+            {
+                fprintf(stderr, "failed to create windows icon for %.*s\n", oc_str8_ip(icon));
+            }
 
-		oc_str8 ico_path = oc_path_append(a, temp_dir, OC_STR8("icon.ico"));
-		if(!icon_from_image(a, icon, ico_path))
-		{
-			fprintf(stderr, "failed to create windows icon for %.*s\n", oc_str8_ip(icon));
-		}
+            res_path = oc_path_append(a, temp_dir, OC_STR8("icon.res"));
+            if(!resource_file_from_icon(a, ico_path, res_path))
+            {
+                fprintf(stderr, "failed to create windows resource file for %.*s\n", oc_str8_ip(ico_path));
+                res_path.ptr = 0;
+                res_path.len = 0;
+            }
+        }
 
-		oc_str8 res_path = oc_path_append(a, temp_dir, OC_STR8("icon.res"));
-		if(!resource_file_from_icon(a, ico_path, res_path))
-		{
-			fprintf(stderr, "failed to create windows resource file for %.*s\n", oc_str8_ip(ico_path));
-			res_path.ptr = 0;
-			res_path.len = 0;
-		}
-
-		oc_str8 exe_out = oc_path_append(a, exeDir, oc_str8_pushf(a, "%.*s.exe", oc_str8_ip(name)));
-		oc_str8 libpath = oc_path_append(a, orcaDir, OC_STR8("bin"));
-		oc_str8 cmd = oc_str8_pushf(a, "link.exe /nologo /LIBPATH:%s runtime.obj orca.dll.lib wasm3.lib %.*s /out:%s",
-			libpath.ptr, oc_str8_ip(res_path), exe_out.ptr);
-		i32 result = system(cmd.ptr);
-		oc_sys_rmdir(temp_dir);
-		if(result)
-		{
-			fprintf(stderr, "failed to link application executable\n");
-			return result;
-		}
-	}
+        oc_str8 exe_out = oc_path_append(a, exeDir, oc_str8_pushf(a, "%.*s.exe", oc_str8_ip(name)));
+        oc_str8 libpath = oc_path_append(a, orcaDir, OC_STR8("bin"));
+        oc_str8 cmd = oc_str8_pushf(a, "link.exe /nologo /LIBPATH:%s runtime.obj orca.dll.lib wasm3.lib %.*s /out:%s",
+            libpath.ptr, oc_str8_ip(res_path), exe_out.ptr);
+        i32 result = system(cmd.ptr);
+        oc_sys_rmdir(temp_dir);
+        if(result)
+        {
+            fprintf(stderr, "failed to link application executable\n");
+            return result;
+        }
+    }
 
     //-----------------------------------------------------------
     //NOTE: copy orca libraries
