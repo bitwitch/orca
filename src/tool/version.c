@@ -38,8 +38,13 @@ int version(int argc, char** argv)
 
     printf("Orca CLI tool version: %s\n", TOSTRING(ORCA_TOOL_VERSION));
 
-    oc_str8 version_dir = current_version_dir(&a);
-    oc_str8 version = oc_path_slice_filename(version_dir);
+    oc_str8 version = current_sdk_version(&a, false);
+    if(version.len == 0)
+    {
+        fprintf(stderr, "error: Failed to determine active Orca SDK version. If you just installed Orca for the first time, make sure you run 'orca update' to install the Orca SDK.\n");
+        return 1;
+    }
+
     printf("Orca active SDK version: %.*s\n", oc_str8_ip(version));
 
     return 0;
