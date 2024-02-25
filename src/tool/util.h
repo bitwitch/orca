@@ -13,6 +13,7 @@
 
 oc_str8 oc_str8_trim_space(oc_str8 s);
 oc_str8 system_orca_dir(oc_arena* a);
+oc_str8 current_sdk_version(oc_arena* a, bool fail_if_not_found);
 oc_str8 current_version_dir(oc_arena* a);
 
 #endif // __UTIL_H_

@@ -12,6 +12,7 @@
 #include "orca.h"
 #include "flag.h"
 #include "util.h"
+#include "system.h"
 
 int sdkPath(int argc, char** argv)
 {
@@ -22,8 +23,7 @@ int sdkPath(int argc, char** argv)
     flag_init_context(&c);
 
     flag_help(&c, "Prints the path to the installed Orca SDK. For use in scripts, e.g. `-I $(orca sdk-path)/src`.");
-
-    // TODO: version selection
+    char** version = flag_str(&c, "v", "version", NULL, "select a specific version of the Orca SDK (default is latest version)");
 
     if(!flag_parse(&c, argc, argv))
     {
@@ -36,9 +36,26 @@ int sdkPath(int argc, char** argv)
         return 1;
     }
 
-    oc_str8 version_dir = current_version_dir(&a);
-    oc_str8 sdk_dir = oc_path_canonical(&a, version_dir);
+    oc_str8 version_dir = {0};
+    if(*version)
+    {
+        // TODO(shaw): maybe we should also accept X.X.X without the leading 'v'
 
+        oc_str8 orca_dir = system_orca_dir(&a);
+        version_dir = oc_path_append(&a, orca_dir, OC_STR8(*version));
+
+        if(!oc_sys_isdir(version_dir))
+        {
+            fprintf(stderr, "error: version %s of the Orca SDK is not installed\n", *version);
+            return 1;
+        }
+    }
+    else
+    {
+        version_dir = current_version_dir(&a);
+    }
+    
+    oc_str8 sdk_dir = oc_path_canonical(&a, version_dir);
     printf("%.*s", oc_str8_ip(sdk_dir));
 
     return 0;
