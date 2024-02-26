@@ -133,7 +133,7 @@ def build_platform_layer_lib_win(release):
         "shlwapi.lib",
         "dxgi.lib",
         "dxguid.lib",
-        "/LIBPATH:src/ext/angle/lib",
+        "/LIBPATH:build/lib",
         "libEGL.dll.lib",
         "libGLESv2.dll.lib",
         "/DELAYLOAD:libEGL.dll",
@@ -198,7 +198,7 @@ def build_platform_layer_lib_mac(release):
         *ldflags, "-dylib",
         "-o", "build/bin/liborca.dylib",
         "build/orca_c.o", "build/orca_objc.o",
-        "-Lsrc/ext/angle/bin", "-lc",
+        "-Lbuild/bin", "-lc",
         "-framework", "Carbon", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore",
         "-weak-lEGL", "-weak-lGLESv2",
     ], check=True)
@@ -457,15 +457,15 @@ def verify_angle():
     checkfiles = None
     if platform.system() == "Windows":
         checkfiles = [
-            "src/ext/angle/bin/libEGL.dll",
-            "src/ext/angle/lib/libEGL.dll.lib",
-            "src/ext/angle/bin/libGLESv2.dll",
-            "src/ext/angle/lib/libGLESv2.dll.lib",
+            "build/bin/libEGL.dll",
+            "build/lib/libEGL.dll.lib",
+            "build/bin/libGLESv2.dll",
+            "build/lib/libGLESv2.dll.lib",
         ]
     elif platform.system() == "Darwin":
         checkfiles = [
-            "src/ext/angle/bin/libEGL.dylib",
-            "src/ext/angle/bin/libGLESv2.dylib",
+            "build/bin/libEGL.dylib",
+            "build/bin/libGLESv2.dylib",
         ]
 
     if checkfiles is None:
@@ -510,7 +510,9 @@ def download_angle():
     with ZipFile(filepath, "r") as anglezip:
         anglezip.extractall(path="scripts/files")
 
-    shutil.copytree(f"scripts/files/angle/", "src/ext/angle", dirs_exist_ok=True)
+    shutil.copytree(f"scripts/files/angle/include", "src/ext/angle/include", dirs_exist_ok=True)
+    shutil.copytree(f"scripts/files/angle/bin", "build/bin", dirs_exist_ok=True)
+    shutil.copytree(f"scripts/files/angle/lib", "build/lib", dirs_exist_ok=True)
 
 def build_libcurl():
     if platform.system() == "Windows":
@@ -759,14 +761,14 @@ def install(args):
         shutil.copy("build\\bin\\orca.dll.lib", bin_dir)
         shutil.copy("build\\bin\\wasm3.lib", bin_dir)
         shutil.copy("build\\bin\\runtime.obj", bin_dir)
-        shutil.copy("src\\ext\\angle\\bin\\libEGL.dll", bin_dir)
-        shutil.copy("src\\ext\\angle\\bin\\libGLESv2.dll", bin_dir)
+        shutil.copy("build\\bin\\libEGL.dll", bin_dir)
+        shutil.copy("build\\bin\\libGLESv2.dll", bin_dir)
     else:
         shutil.copy("build/bin/liborca.dylib", bin_dir)
         shutil.copy("build/bin/mtl_renderer.metallib", bin_dir)
         shutil.copy("build/bin/orca_runtime", bin_dir)
-        shutil.copy("src/ext/angle/bin/libEGL.dylib", bin_dir)
-        shutil.copy("src/ext/angle/bin/libGLESv2.dylib", bin_dir)
+        shutil.copy("build/bin/libEGL.dylib", bin_dir)
+        shutil.copy("build/bin/libGLESv2.dylib", bin_dir)
 
     shutil.copy(tool_path, orca_dir)
 

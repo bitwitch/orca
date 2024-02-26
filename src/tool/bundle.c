@@ -192,8 +192,8 @@ int winBundle(
     //NOTE: copy orca libraries
     //-----------------------------------------------------------
     oc_str8 orcaLib = oc_path_append(a, sdk_dir, OC_STR8("bin/orca.dll"));
-    oc_str8 glesLib = oc_path_append(a, sdk_dir, OC_STR8("src/ext/angle/bin/libGLESv2.dll"));
-    oc_str8 eglLib = oc_path_append(a, sdk_dir, OC_STR8("src/ext/angle/bin/libEGL.dll"));
+    oc_str8 glesLib = oc_path_append(a, sdk_dir, OC_STR8("bin/libGLESv2.dll"));
+    oc_str8 eglLib = oc_path_append(a, sdk_dir, OC_STR8("bin/libEGL.dll"));
 
     TRY(oc_sys_copy(orcaLib, exeDir));
     TRY(oc_sys_copy(glesLib, exeDir));
@@ -291,8 +291,8 @@ int macBundle(
     //-----------------------------------------------------------
     oc_str8 orcaExe = oc_path_append(a, sdk_dir, OC_STR8("bin/orca_runtime"));
     oc_str8 orcaLib = oc_path_append(a, sdk_dir, OC_STR8("bin/liborca.dylib"));
-    oc_str8 glesLib = oc_path_append(a, sdk_dir, OC_STR8("src/ext/angle/bin/libGLESv2.dylib"));
-    oc_str8 eglLib = oc_path_append(a, sdk_dir, OC_STR8("src/ext/angle/bin/libEGL.dylib"));
+    oc_str8 glesLib = oc_path_append(a, sdk_dir, OC_STR8("bin/libGLESv2.dylib"));
+    oc_str8 eglLib = oc_path_append(a, sdk_dir, OC_STR8("bin/libEGL.dylib"));
     oc_str8 renderer_lib = oc_path_append(a, sdk_dir, OC_STR8("bin/mtl_renderer.metallib"));
 
     TRY(oc_sys_copy(orcaExe, exeDir));
