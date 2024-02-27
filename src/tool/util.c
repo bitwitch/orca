@@ -66,17 +66,25 @@ oc_str8 get_version_dir(oc_arena* a, oc_str8 version, bool fail_if_not_found)
 {
     oc_str8 orca_dir = system_orca_dir(a);
     oc_str8 version_dir = oc_path_append(a, orca_dir, version);
-    if(!oc_sys_isdir(version_dir))
+    if(oc_sys_isdir(version_dir))
     {
-        if(fail_if_not_found)
-        {
-            fprintf(stderr, "error: version %.*s of the Orca SDK is not installed\n",
-                    oc_str8_ip(version));
-            exit(1);
-        }
-        return (oc_str8){ 0 };
+        return version_dir;
     }
-    return version_dir;
+
+    oc_str8 version_with_v_prefix = oc_str8_pushf(a, "v%.*s", oc_str8_ip(version));
+    oc_str8 version_dir_with_v_prefix = oc_path_append(a, orca_dir, version_with_v_prefix);
+    if(oc_sys_isdir(version_dir_with_v_prefix))
+    {
+        return version_dir_with_v_prefix;
+    }
+
+    if(fail_if_not_found)
+    {
+        fprintf(stderr, "error: version %.*s of the Orca SDK is not installed\n",
+            oc_str8_ip(version));
+        exit(1);
+    }
+    return (oc_str8){ 0 };
 }
 
 bool isspace_cheap(int c)

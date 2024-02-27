@@ -143,8 +143,8 @@ int winBundle(
     TRY(oc_sys_mkdirs(dataDir));
 
     oc_str8 sdk_dir = version.len > 0
-                        ? get_version_dir(a, version, true)
-                        : current_version_dir(a, true);
+        ? get_version_dir(a, version, true)
+        : current_version_dir(a, true);
 
     //-----------------------------------------------------------
     //NOTE: link runtime objects and application icon into exe
@@ -282,8 +282,8 @@ int macBundle(
     TRY(oc_sys_mkdirs(dataDir));
 
     oc_str8 sdk_dir = version.len > 0
-                        ? get_version_dir(a, version, true)
-                        : current_version_dir(a, true);
+        ? get_version_dir(a, version, true)
+        : current_version_dir(a, true);
 
     //-----------------------------------------------------------
     //NOTE: copy orca runtime executable and libraries
