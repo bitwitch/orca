@@ -114,6 +114,7 @@ int update(int argc, char** argv)
     // download and extract latest version
     //-----------------------------------------------------------------------------
     {
+        printf("Downloading Orca SDK version %.*s...\n", oc_str8_ip(version));
         oc_str8 release_tarname = oc_str8_pushf(&arena, "%.*s.tar.gz",
                                                 oc_str8_ip(RELEASE_FILENAME));
         oc_str8 release_url = oc_str8_pushf(&arena, "/releases/latest/download/%.*s",
@@ -129,6 +130,7 @@ int update(int argc, char** argv)
             return 1;
         }
 
+        printf("Extracting Orca SDK...\n");
         if(!tarball_extract(release_filepath, temp_dir))
         {
             fprintf(stderr, "error: failed to extract files from %s\n", release_filepath.ptr);
@@ -156,6 +158,10 @@ int update(int argc, char** argv)
             checksum.len = oc_file_size(checksum_file);
             checksum.ptr = oc_arena_push(&arena, checksum.len + 1);
             oc_file_read(checksum_file, checksum.len, checksum.ptr);
+            if(oc_file_last_error(checksum_file))
+            {
+                fprintf(stderr, "error: failed to read checksum file %s\n", checksum_path.ptr);
+            }
         }
         oc_file_close(checksum_file);
 
@@ -191,6 +197,7 @@ int update(int argc, char** argv)
     // NOTE(shaw): assuming that the cli tool will always just call update and
     // exit so no cleanup is done, i.e. curl_easy_cleanup(curl)
 
+    printf("Successfully updated Orca SDK to version %.*s.\n", oc_str8_ip(version));
     return 0;
 }
 
@@ -264,6 +271,7 @@ static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str
     oc_arena_scope scratch = oc_scratch_begin();
 
     // download latest orca cli tool
+    printf("Downloading cli tool version %.*s...\n", oc_str8_ip(new_version));
     oc_str8 tool_url = oc_path_append(scratch.arena, repo_url_base,
                                       OC_STR8("/releases/latest/download/orca.exe"));
     oc_str8 new_tool_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("latest_orca.exe"));
@@ -298,6 +306,8 @@ static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str
         goto cleanup;
     }
 
+    printf("Successfully updated cli tool to version %.*s.\n", oc_str8_ip(new_version));
+
 cleanup:
     oc_scratch_end(scratch);
     return result;
@@ -318,6 +328,7 @@ static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str
     }
 
     // download latest orca cli tool
+    printf("Downloading cli tool version %.*s...\n", oc_str8_ip(new_version));
     oc_str8 tool_url = oc_path_append(scratch.arena, repo_url_base,
                                       OC_STR8("/releases/latest/download/orca-cli-tool-mac-universal.tar.gz"));
     oc_str8 tarball_path = oc_path_append(scratch.arena, temp_dir, OC_STR8("tool.tar.gz"));
@@ -330,6 +341,7 @@ static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str
         goto cleanup;
     }
 
+    printf("Extracting cli tool ...\n");
     if(!tarball_extract(tarball_path, temp_dir))
     {
         fprintf(stderr, "error: failed to extract orca cli tool from tarball\n");
@@ -339,20 +351,11 @@ static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str
     oc_str8 new_tool_path = oc_path_append(scratch.arena, orca_dir, OC_STR8("latest_orca"));
     TRY(oc_sys_move(temp_dir_orca, new_tool_path));
 
-    // write new version to current_version file
-    if(!overwrite_current_version(new_version))
-    {
-        fprintf(stderr, "error: failed to update current version file\n");
-        result = 1;
-        goto cleanup;
-    }
-
     // execute orca update with newer cli tool
     oc_str8 cmd = oc_str8_pushf(scratch.arena, "%s update", new_tool_path.ptr);
     result = system(cmd.ptr);
     if(result)
     {
-        overwrite_current_version(old_version);
         goto cleanup;
     }
 
@@ -367,9 +370,10 @@ static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str
     if(result)
     {
         fprintf(stderr, "error: failed to replace Orca cli tool with latest version\n");
-        overwrite_current_version(old_version);
         goto cleanup;
     }
+
+    printf("Successfully updated cli tool to version %.*s.\n", oc_str8_ip(new_version));
 
 cleanup:
     if(oc_sys_exists(temp_dir))

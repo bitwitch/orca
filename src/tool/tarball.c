@@ -144,8 +144,6 @@ int untar(FILE* file, oc_str8 out_dir)
     int err = mtar_read_header(&tar, &h);
     while(err == MTAR_ESUCCESS)
     {
-        printf("%s (%d bytes)\n", h.name, h.size);
-
         if(h.type == MTAR_TDIR)
         {
             oc_arena_scope scratch = oc_scratch_begin();
