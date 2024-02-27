@@ -15,8 +15,8 @@
 #include "system.h"
 
 #if OC_PLATFORM_WINDOWS
-#include "win32_icon.c"
-#endif 
+    #include "win32_icon.c"
+#endif
 
 int winBundle(
     oc_arena* a,
@@ -39,7 +39,7 @@ int macBundle(
     oc_str8 app_version,
     oc_str8 outDir,
     oc_str8 module,
-	bool mtlEnableCapture);
+    bool mtlEnableCapture);
 
 int bundle(int argc, char** argv)
 {
@@ -80,7 +80,6 @@ int bundle(int argc, char** argv)
         return 1;
     }
 
-
 #if OC_PLATFORM_WINDOWS
     return winBundle(
         &a,
@@ -103,7 +102,7 @@ int bundle(int argc, char** argv)
         OC_STR8(*app_version),
         OC_STR8(*outDir),
         OC_STR8(*module),
-		*mtlEnableCapture);
+        *mtlEnableCapture);
 #else
     #error Can't build the bundle script on this platform!
 #endif
@@ -143,16 +142,16 @@ int winBundle(
     TRY(oc_sys_mkdirs(wasmDir));
     TRY(oc_sys_mkdirs(dataDir));
 
-    oc_str8 sdk_dir = version.len > 0 
-        ?  get_version_dir(a, version, true)
-        : current_version_dir(a, true);
+    oc_str8 sdk_dir = version.len > 0
+                        ? get_version_dir(a, version, true)
+                        : current_version_dir(a, true);
 
     //-----------------------------------------------------------
     //NOTE: link runtime objects and application icon into exe
     //-----------------------------------------------------------
-	{
+    {
         oc_str8 temp_dir = oc_path_append(a, outDir, OC_STR8("temporary"));
-        oc_str8 res_path = {0};
+        oc_str8 res_path = { 0 };
         if(icon.len > 0)
         {
             if(oc_sys_exists(temp_dir))
@@ -178,7 +177,7 @@ int winBundle(
         oc_str8 exe_out = oc_path_append(a, exeDir, oc_str8_pushf(a, "%.*s.exe", oc_str8_ip(name)));
         oc_str8 libpath = oc_path_append(a, sdk_dir, OC_STR8("bin"));
         oc_str8 cmd = oc_str8_pushf(a, "link.exe /nologo /LIBPATH:%s runtime.obj orca.dll.lib wasm3.lib %.*s /out:%s",
-            libpath.ptr, oc_str8_ip(res_path), exe_out.ptr);
+                                    libpath.ptr, oc_str8_ip(res_path), exe_out.ptr);
         i32 result = system(cmd.ptr);
         oc_sys_rmdir(temp_dir);
         if(result)
@@ -209,8 +208,8 @@ int winBundle(
         oc_str8 resource_file = it->string;
         if(oc_sys_isdir(resource_file))
         {
-            printf("Error: Got %.*s as a resource file, but it is a directory. Ignoring.", 
-				oc_str8_ip(resource_file));
+            printf("Error: Got %.*s as a resource file, but it is a directory. Ignoring.",
+                   oc_str8_ip(resource_file));
         }
         else
         {
@@ -227,8 +226,8 @@ int winBundle(
         }
         else
         {
-            printf("Error: Got %.*s as a resource dir, but it is not a directory. Ignoring.", 
-				oc_str8_ip(resource_dir));
+            printf("Error: Got %.*s as a resource dir, but it is not a directory. Ignoring.",
+                   oc_str8_ip(resource_dir));
         }
     }
 
@@ -252,7 +251,7 @@ int macBundle(
     oc_str8 app_version,
     oc_str8 outDir,
     oc_str8 module,
-	bool mtlEnableCapture)
+    bool mtlEnableCapture)
 {
     //-----------------------------------------------------------
     //NOTE: make bundle directory structure
@@ -283,8 +282,8 @@ int macBundle(
     TRY(oc_sys_mkdirs(dataDir));
 
     oc_str8 sdk_dir = version.len > 0
-        ?  get_version_dir(a, version, true)
-        : current_version_dir(a, true);
+                        ? get_version_dir(a, version, true)
+                        : current_version_dir(a, true);
 
     //-----------------------------------------------------------
     //NOTE: copy orca runtime executable and libraries
@@ -312,7 +311,7 @@ int macBundle(
         if(oc_sys_isdir(resource_file))
         {
             printf("Error: Got %.*s as a resource file, but it is a directory. Ignoring.",
-				oc_str8_ip(resource_file));
+                   oc_str8_ip(resource_file));
         }
         else
         {
@@ -325,15 +324,15 @@ int macBundle(
         oc_str8 resource_dir = it->string;
         if(oc_sys_isdir(resource_dir))
         {
-			// NOTE(shaw): trailing slash means that contents are copied rather
-			// than the directory itself
-			oc_str8 resource_dir_slash = oc_path_append(a, resource_dir, OC_STR8("/"));
-			TRY(oc_sys_copytree(resource_dir_slash, dataDir));
+            // NOTE(shaw): trailing slash means that contents are copied rather
+            // than the directory itself
+            oc_str8 resource_dir_slash = oc_path_append(a, resource_dir, OC_STR8("/"));
+            TRY(oc_sys_copytree(resource_dir_slash, dataDir));
         }
         else
         {
-            printf("Error: Got %.*s as a resource dir, but it is not a directory. Ignoring.", 
-				oc_str8_ip(resource_dir));
+            printf("Error: Got %.*s as a resource dir, but it is not a directory. Ignoring.",
+                   oc_str8_ip(resource_dir));
         }
     }
 
@@ -346,100 +345,100 @@ int macBundle(
     //-----------------------------------------------------------
     //NOTE make icon
     //-----------------------------------------------------------
-	if(icon.len) 
-	{
-		oc_str8 icon_dir = oc_path_slice_directory(icon);
-		oc_str8 iconset = oc_path_append(a, icon_dir, OC_STR8("icon.iconset"));
-		if(oc_sys_exists(iconset)) 
-		{
-			TRY(oc_sys_rmdir(iconset));
-		}
-		TRY(oc_sys_mkdirs(iconset));
+    if(icon.len)
+    {
+        oc_str8 icon_dir = oc_path_slice_directory(icon);
+        oc_str8 iconset = oc_path_append(a, icon_dir, OC_STR8("icon.iconset"));
+        if(oc_sys_exists(iconset))
+        {
+            TRY(oc_sys_rmdir(iconset));
+        }
+        TRY(oc_sys_mkdirs(iconset));
 
-		i32 size = 16;
-		for(i32 i = 0; i < 7; ++i)
-		{
-			oc_str8 sized_icon = oc_path_append(a, iconset, oc_str8_pushf(a, "icon_%dx%d.png", size, size));
-			oc_str8 cmd = oc_str8_pushf(a, "sips -z %d %d %.*s --out %s >/dev/null 2>&1",
-				size, size, oc_str8_ip(icon), sized_icon.ptr);
-			i32 result = system(cmd.ptr);
-			if(result)
-			{
-				fprintf(stderr, "failed to generate %dx%d icon from %.*s\n", size, size, oc_str8_ip(icon));
-			}
+        i32 size = 16;
+        for(i32 i = 0; i < 7; ++i)
+        {
+            oc_str8 sized_icon = oc_path_append(a, iconset, oc_str8_pushf(a, "icon_%dx%d.png", size, size));
+            oc_str8 cmd = oc_str8_pushf(a, "sips -z %d %d %.*s --out %s >/dev/null 2>&1",
+                                        size, size, oc_str8_ip(icon), sized_icon.ptr);
+            i32 result = system(cmd.ptr);
+            if(result)
+            {
+                fprintf(stderr, "failed to generate %dx%d icon from %.*s\n", size, size, oc_str8_ip(icon));
+            }
 
-			i32 retina_size = size * 2;
-			oc_str8 retina_icon = oc_path_append(a, iconset, oc_str8_pushf(a, "icon_%dx%d@2x.png", size, size));
-			cmd = oc_str8_pushf(a, "sips -z %d %d %.*s --out %s >/dev/null 2>&1",
-				retina_size, retina_size, oc_str8_ip(icon), sized_icon.ptr);
-			result = system(cmd.ptr);
-			if(result)
-			{
-				fprintf(stderr, "failed to generate %dx%d@2x retina icon from %.*s\n", size, size, oc_str8_ip(icon));
-			}
+            i32 retina_size = size * 2;
+            oc_str8 retina_icon = oc_path_append(a, iconset, oc_str8_pushf(a, "icon_%dx%d@2x.png", size, size));
+            cmd = oc_str8_pushf(a, "sips -z %d %d %.*s --out %s >/dev/null 2>&1",
+                                retina_size, retina_size, oc_str8_ip(icon), sized_icon.ptr);
+            result = system(cmd.ptr);
+            if(result)
+            {
+                fprintf(stderr, "failed to generate %dx%d@2x retina icon from %.*s\n", size, size, oc_str8_ip(icon));
+            }
 
-			size *= 2;
-		}
+            size *= 2;
+        }
 
-		oc_str8 icon_out = oc_path_append(a, resDir, OC_STR8("icon.icns"));
-		oc_str8 cmd = oc_str8_pushf(a, "iconutil -c icns -o %s %s", icon_out.ptr, iconset.ptr);
-		i32 result = system(cmd.ptr);
-		if(result)
-		{
-			fprintf(stderr, "failed to generate app icon from %.*s", oc_str8_ip(icon));
-		}
-		TRY(oc_sys_rmdir(iconset));
-	}
+        oc_str8 icon_out = oc_path_append(a, resDir, OC_STR8("icon.icns"));
+        oc_str8 cmd = oc_str8_pushf(a, "iconutil -c icns -o %s %s", icon_out.ptr, iconset.ptr);
+        i32 result = system(cmd.ptr);
+        if(result)
+        {
+            fprintf(stderr, "failed to generate app icon from %.*s", oc_str8_ip(icon));
+        }
+        TRY(oc_sys_rmdir(iconset));
+    }
 
-	//-----------------------------------------------------------
-	//NOTE: write plist file
-	//-----------------------------------------------------------
-	oc_str8 bundle_sig = OC_STR8("????");
+    //-----------------------------------------------------------
+    //NOTE: write plist file
+    //-----------------------------------------------------------
+    oc_str8 bundle_sig = OC_STR8("????");
 
-	oc_str8 plist_contents = oc_str8_pushf(a,
-"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-"<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
-"<plist version=\"1.0\">"
-	"<dict>"
-		"<key>CFBundleName</key>"
-		"<string>%.*s</string>"
-		"<key>CFBundleDisplayName</key>"
-		"<string>%.*s</string>"
-		"<key>CFBundleIdentifier</key>"
-		"<string>%.*s</string>"
-		"<key>CFBundleVersion</key>"
-		"<string>%.*s</string>"
-		"<key>CFBundlePackageType</key>"
-		"<string>APPL</string>"
-		"<key>CFBundleSignature</key>"
-		"<string>%.*s</string>"
-		"<key>CFBundleExecutable</key>"
-		"<string>orca_runtime</string>"
-		"<key>CFBundleIconFile</key>"
-		"<string>icon.icns</string>"
-		"<key>NSHighResolutionCapable</key>"
-		"<string>True</string>"
-		"%s"
-	"</dict>"
-"</plist>",
-		oc_str8_ip(name),
-		oc_str8_ip(name),
-		oc_str8_ip(name),
-		oc_str8_ip(app_version),
-		oc_str8_ip(bundle_sig),
-		mtlEnableCapture ? "<key>MetalCaptureEnabled</key><true/>" : "");
+    oc_str8 plist_contents = oc_str8_pushf(a,
+                                           "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                                           "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
+                                           "<plist version=\"1.0\">"
+                                           "<dict>"
+                                           "<key>CFBundleName</key>"
+                                           "<string>%.*s</string>"
+                                           "<key>CFBundleDisplayName</key>"
+                                           "<string>%.*s</string>"
+                                           "<key>CFBundleIdentifier</key>"
+                                           "<string>%.*s</string>"
+                                           "<key>CFBundleVersion</key>"
+                                           "<string>%.*s</string>"
+                                           "<key>CFBundlePackageType</key>"
+                                           "<string>APPL</string>"
+                                           "<key>CFBundleSignature</key>"
+                                           "<string>%.*s</string>"
+                                           "<key>CFBundleExecutable</key>"
+                                           "<string>orca_runtime</string>"
+                                           "<key>CFBundleIconFile</key>"
+                                           "<string>icon.icns</string>"
+                                           "<key>NSHighResolutionCapable</key>"
+                                           "<string>True</string>"
+                                           "%s"
+                                           "</dict>"
+                                           "</plist>",
+                                           oc_str8_ip(name),
+                                           oc_str8_ip(name),
+                                           oc_str8_ip(name),
+                                           oc_str8_ip(app_version),
+                                           oc_str8_ip(bundle_sig),
+                                           mtlEnableCapture ? "<key>MetalCaptureEnabled</key><true/>" : "");
 
-	oc_str8 plist_path = oc_path_append(a, contentsDir, OC_STR8("Info.plist"));
-	oc_file plist_file = oc_file_open(plist_path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
-	if(oc_file_is_nil(plist_file)) 
-	{
-		fprintf(stderr, "Error: failed to create plist file \"%.*s\"\n", 
-			oc_str8_ip(plist_path));
-		oc_file_close(plist_file);
-		return 1;
-	} 
-	oc_file_write(plist_file, plist_contents.len, plist_contents.ptr);
-	oc_file_close(plist_file);
+    oc_str8 plist_path = oc_path_append(a, contentsDir, OC_STR8("Info.plist"));
+    oc_file plist_file = oc_file_open(plist_path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
+    if(oc_file_is_nil(plist_file))
+    {
+        fprintf(stderr, "Error: failed to create plist file \"%.*s\"\n",
+                oc_str8_ip(plist_path));
+        oc_file_close(plist_file);
+        return 1;
+    }
+    oc_file_write(plist_file, plist_contents.len, plist_contents.ptr);
+    oc_file_close(plist_file);
 
     return 0;
 }

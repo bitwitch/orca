@@ -39,13 +39,11 @@ int sdkPath(int argc, char** argv)
     // TODO(shaw): maybe we should also accept X.X.X without the leading 'v'
 
     oc_str8 version_dir = *version
-        ?  get_version_dir(&a, OC_STR8(*version), true)
-        : current_version_dir(&a, true);
-    
+                            ? get_version_dir(&a, OC_STR8(*version), true)
+                            : current_version_dir(&a, true);
+
     oc_str8 sdk_dir = oc_path_canonical(&a, version_dir);
     printf("%.*s", oc_str8_ip(sdk_dir));
 
     return 0;
 }
-
-

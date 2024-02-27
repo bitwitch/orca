@@ -77,7 +77,7 @@ bool oc_sys_mkdirs(oc_str8 path)
     if(result)
     {
         snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
-			"failed to create directories \"%.*s\"", oc_str8_ip(path));
+                 "failed to create directories \"%.*s\"", oc_str8_ip(path));
         oc_sys_err.code = result;
         return false;
     }
@@ -113,7 +113,7 @@ bool oc_sys_rmdir(oc_str8 path)
     if(result)
     {
         snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
-			"failed to remove directory \"%.*s\"", oc_str8_ip(path));
+                 "failed to remove directory \"%.*s\"", oc_str8_ip(path));
         oc_sys_err.code = result;
         return false;
     }
@@ -125,8 +125,8 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
 {
     if(oc_sys_isdir(src))
     {
-        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
-            "failed to copy file: \"%.*s\" is a directory, oc_sys_copy can only copy files; use oc_sys_copytree for directories", oc_str8_ip(src));
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
+                 "failed to copy file: \"%.*s\" is a directory, oc_sys_copy can only copy files; use oc_sys_copytree for directories", oc_str8_ip(src));
         return false;
     }
 
@@ -146,9 +146,9 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst)
 
     if(result)
     {
-        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
-            "failed to copy file \"%.*s\" to \"%.*s\"", 
-			oc_str8_ip(src), oc_str8_ip(dst));
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
+                 "failed to copy file \"%.*s\" to \"%.*s\"",
+                 oc_str8_ip(src), oc_str8_ip(dst));
         oc_sys_err.code = result;
         return false;
     }
@@ -160,9 +160,9 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
 {
     if(!oc_sys_isdir(src))
     {
-        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
-			"can only copy directories, not files; use oc_sys_copy for files");
-		oc_sys_err.code = 0;
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
+                 "can only copy directories, not files; use oc_sys_copy for files");
+        oc_sys_err.code = 0;
         return false;
     }
 
@@ -176,9 +176,9 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
 
     if(result)
     {
-        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
-            "failed to copy directory tree from \"%.*s\" to \"%.*s\"",
-			oc_str8_ip(src), oc_str8_ip(dst));
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
+                 "failed to copy directory tree from \"%.*s\" to \"%.*s\"",
+                 oc_str8_ip(src), oc_str8_ip(dst));
         oc_sys_err.code = result;
         return false;
     }
@@ -188,43 +188,55 @@ bool oc_sys_copytree(oc_str8 src, oc_str8 dst)
 
 bool oc_sys_move(oc_str8 src, oc_str8 dst)
 {
-	bool result = true;
+    bool result = true;
 
-	oc_arena_scope scratch = oc_scratch_begin();
-	const char* csrc = oc_str8_to_cstring(scratch.arena, src);
-	const char* cdst = oc_str8_to_cstring(scratch.arena, dst);
+    oc_arena_scope scratch = oc_scratch_begin();
+    const char* csrc = oc_str8_to_cstring(scratch.arena, src);
+    const char* cdst = oc_str8_to_cstring(scratch.arena, dst);
 
-	oc_str8 src_dir = oc_path_slice_directory(src);
-	oc_str8 dst_dir = oc_path_slice_directory(dst);
+    oc_str8 src_dir = oc_path_slice_directory(src);
+    oc_str8 dst_dir = oc_path_slice_directory(dst);
 
-	if (oc_str8_cmp(src_dir, dst_dir) == 0) {
-		if (rename(csrc, cdst) != 0) {
-			result = false;
-		}
-	} else {
-		if (oc_sys_isdir(src)) {
-			if (!oc_sys_copytree(src, dst)) {
-				result = false;
-			}
-			if (result && !oc_sys_rmdir(src)) {
-				result = false;
-			}
-		} else {
-			if (!oc_sys_copy(src, dst)) {
-				result = false;
-			}
-			if (result && remove(csrc) != 0) {
-				result = false;
-			}
-		}
-	}
+    if(oc_str8_cmp(src_dir, dst_dir) == 0)
+    {
+        if(rename(csrc, cdst) != 0)
+        {
+            result = false;
+        }
+    }
+    else
+    {
+        if(oc_sys_isdir(src))
+        {
+            if(!oc_sys_copytree(src, dst))
+            {
+                result = false;
+            }
+            if(result && !oc_sys_rmdir(src))
+            {
+                result = false;
+            }
+        }
+        else
+        {
+            if(!oc_sys_copy(src, dst))
+            {
+                result = false;
+            }
+            if(result && remove(csrc) != 0)
+            {
+                result = false;
+            }
+        }
+    }
 
-	if (!result) {
-		snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR, 
-			"failed to move \"%.*s\" to \"%.*s\"",
-			oc_str8_ip(src), oc_str8_ip(dst));
-	}
+    if(!result)
+    {
+        snprintf(oc_sys_err.msg, OC_SYS_MAX_ERROR,
+                 "failed to move \"%.*s\" to \"%.*s\"",
+                 oc_str8_ip(src), oc_str8_ip(dst));
+    }
 
-	oc_scratch_end(scratch);
-	return result;
+    oc_scratch_end(scratch);
+    return result;
 }

@@ -15,7 +15,7 @@
 
 typedef struct
 {
-	char msg[OC_SYS_MAX_ERROR];
+    char msg[OC_SYS_MAX_ERROR];
     i32 code;
 } oc_sys_err_def;
 
@@ -30,19 +30,19 @@ bool oc_sys_copy(oc_str8 src, oc_str8 dst);
 bool oc_sys_copytree(oc_str8 src, oc_str8 dst);
 bool oc_sys_move(oc_str8 src, oc_str8 dst);
 
-#define TRY(cmd)                                                                              \
-    {                                                                                         \
-        bool __result = cmd;                                                                  \
-        if(!__result)                                                                         \
-        {                                                                                     \
-            int code = oc_sys_err.code;                                                       \
-            if(code == 0)                                                                     \
-            {                                                                                 \
-                code = 1;                                                                     \
-            }                                                                                 \
+#define TRY(cmd)                                                            \
+    {                                                                       \
+        bool __result = cmd;                                                \
+        if(!__result)                                                       \
+        {                                                                   \
+            int code = oc_sys_err.code;                                     \
+            if(code == 0)                                                   \
+            {                                                               \
+                code = 1;                                                   \
+            }                                                               \
             fprintf(stderr, "ERROR (code %d): %s\n", code, oc_sys_err.msg); \
-            return code;                                                                      \
-        }                                                                                     \
+            return code;                                                    \
+        }                                                                   \
     }
 
 #endif // __SYSTEM_H_
