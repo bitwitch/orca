@@ -532,7 +532,8 @@ def download_angle():
 
     shutil.copytree(f"scripts/files/angle/include", "src/ext/angle/include", dirs_exist_ok=True)
     shutil.copytree(f"scripts/files/angle/bin", "build/bin", dirs_exist_ok=True)
-    shutil.copytree(f"scripts/files/angle/lib", "build/lib", dirs_exist_ok=True)
+    if platform.system() == "Windows":
+        shutil.copytree(f"scripts/files/angle/lib", "build/lib", dirs_exist_ok=True)
 
 def build_libcurl():
     if platform.system() == "Windows":
