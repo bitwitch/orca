@@ -67,7 +67,27 @@ def runtime_checksum_last():
 
 
 def runtime_checksum():
-    return dirsum("src")
+    if platform.system() == "Windows":
+        excluded_dirs = ["src\\tool", "src\\ext\\curl", "src\\ext\\zlib", "src\\ext\\microtar"]
+    elif platform.system() == "Darwin":
+        excluded_dirs = ["src/tool", "src/ext/curl", "src/ext/zlib", "src/ext/microtar"]
+    else:
+        log_error(f"can't generate runtime_checksum for unknown platform '{platform.system()}'")
+        exit(1)
+    return dirsum("src", excluded_dirs=excluded_dirs)
+
+
+def tool_checksum():
+    tool_dir = "src\\tool" if platform.system() == "Windows" else "src/tool"
+    return dirsum(tool_dir)
+
+
+def tool_checksum_last():
+    try:
+        with open("build/orcatool.sum", "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return None
 
 
 def clean(args):
@@ -697,6 +717,8 @@ def build_tool(args):
 
     shutil.copy(f"src/tool/build/bin/{outname}", "build/bin/")
 
+    with open("build/orcatool.sum", "w") as f:
+        f.write(tool_checksum())
 
 def prompt(msg):
     while True:
@@ -733,6 +755,20 @@ def install(args):
         print("Your build of the Orca runtime is out of date. We recommend that you")
         print("rebuild the runtime first with `orcadev build-runtime`.")
         if not prompt("Do you wish to install the runtime anyway?"):
+            return
+        print()
+
+    if tool_checksum_last() is None:
+        print("You must build the Orca tool before you can install it to your")
+        print("system. Please run the following command first:")
+        print()
+        print("orcadev build-tool")
+        exit(1)
+
+    if tool_checksum() != tool_checksum_last():
+        print("Your build of the Orca tool is out of date. We recommend that you")
+        print("rebuild the tool first with `orcadev build-tool`.")
+        if not prompt("Do you wish to install the tool anyway?"):
             return
         print()
 
