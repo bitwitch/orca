@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <ftw.h>
 #include <copyfile.h>
+#include <dirent.h>
 
 #include "orca.h"
 #include "system.h"
@@ -239,4 +240,35 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst)
 
     oc_scratch_end(scratch);
     return result;
+}
+
+oc_list oc_sys_read_dir(oc_arena *a, oc_str8 path)
+{
+    oc_list entries = {0};
+
+    oc_str8 path_cstr = oc_str8_to_cstring(a, path);
+	DIR *dir = opendir(path_cstr);
+	if (!dir) {
+        return entries;
+	}
+
+    oc_str8 base = oc_str8_push_copy(a, path);
+
+	struct dirent *d = NULL;
+
+	while((d = readdir(dir)) != NULL)
+    {
+		if(0 == strcmp(d->d_name, ".") || 0 == strcmp(d->d_name, ".."))
+        {
+			continue;
+		}
+
+        oc_sys_dir_entry *entry = oc_arena_push_type(a, oc_sys_dir_entry);
+        entry->base = base;
+        entry->name = oc_str8_push_cstring(a, d->d_name);
+        entry->is_dir = d->d_type & DT_DIR; 
+        oc_list_push_back(&entries, &entry->node);
+	}
+
+    return entries;
 }

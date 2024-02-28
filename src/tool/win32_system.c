@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <io.h>
 
 #include "orca.h"
 #include "system.h"
@@ -214,4 +215,39 @@ bool oc_sys_move(oc_str8 src, oc_str8 dst)
     }
 
     return true;
+}
+
+// returns a list with element type oc_sys_dir_entry
+oc_list oc_sys_read_dir(oc_arena *a, oc_str8 path)
+{
+    oc_list entries = {0};
+
+    oc_str8 file_spec = oc_path_append(a, path, OC_STR8("*"));
+    oc_str16 file_spec_wide = oc_win32_utf8_to_wide(a, file_spec);
+
+    struct _wfinddata_t file_info;
+    intptr_t handle = _wfindfirst(file_spec_wide.ptr, &file_info);
+    if(handle == -1)
+    {
+        // no files
+        return entries;
+    }
+
+    oc_str8 base = oc_str8_push_copy(a, path);
+
+    do
+    {
+        if(0 == wcscmp(file_info.name, L".") || 0 == wcscmp(file_info.name, L".."))
+        {
+            continue;
+        }
+        oc_sys_dir_entry *entry = oc_arena_push_type(a, oc_sys_dir_entry);
+        entry->base = base;
+        oc_str16 name_wide = oc_str16_from_buffer(lstrlenW(file_info.name), file_info.name);
+        entry->name = oc_win32_wide_to_utf8(a, name_wide);
+        entry->is_dir = file_info.attrib & _A_SUBDIR;
+        oc_list_push_back(&entries, &entry->node);
+    } while (_wfindnext(handle, &file_info) == 0);
+
+    return entries;
 }

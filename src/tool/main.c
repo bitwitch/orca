@@ -30,6 +30,7 @@
 #include "microtar.c"
 #include "tarball.c"
 #include "update.c"
+#include "list.c"
 #include "system.c"
 
 int main(int argc, char** argv)
@@ -42,6 +43,7 @@ int main(int argc, char** argv)
     bool* doBundle = flag_command(&c, "bundle", "Package a WebAssembly module into a standalone Orca application.");
     bool* doVersion = flag_command(&c, "version", "Print the current Orca version.");
     bool* doUpdate = flag_command(&c, "update", "Install the latest version of Orca.");
+    bool* doList = flag_command(&c, "list", "List installed versions of Orca.");
 
     // Hacks to achieve the following:
     // - `orca` => `orca -h`
@@ -96,6 +98,10 @@ int main(int argc, char** argv)
     else if(*doUpdate)
     {
         return update(rest_argc, rest_argv);
+    }
+    else if(*doList)
+    {
+        return list(rest_argc, rest_argv);
     }
     else
     {
