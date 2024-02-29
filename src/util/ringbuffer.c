@@ -10,7 +10,7 @@
 
 void oc_ringbuffer_init(oc_ringbuffer* ring, u8 capExp)
 {
-    u64 cap = 1 << capExp;
+    u64 cap = 1ULL << capExp;
     ring->mask = cap - 1;
     ring->readIndex = 0;
     ring->reserveIndex = 0;

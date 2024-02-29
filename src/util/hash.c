@@ -11,7 +11,7 @@
 //xxhash64, copy-pasted from https://github.com/demetri/scribbles/blob/master/hashing/hash_functions.c
 // Thanks to Demetri Spanos
 
-uint64_t xxh_64(const void* key, int len, uint64_t h)
+uint64_t xxh_64(const void* key, size_t len, uint64_t h)
 {
     // primes used in mul-rot updates
     uint64_t p1 = 0x9e3779b185ebca87, p2 = 0xc2b2ae3d27d4eb4f,

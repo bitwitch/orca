@@ -22,7 +22,7 @@ oc_sys_err_def oc_sys_err;
 
 oc_str8 oc_sys_getcwd(oc_arena* a)
 {
-    u64 len = GetCurrentDirectory(0, NULL);
+    u32 len = GetCurrentDirectory(0, NULL);
     char* buf = oc_arena_push(a, len);
     GetCurrentDirectory(len, buf);
     return OC_STR8(buf);

@@ -214,7 +214,7 @@ int oc_condition_wait(oc_condition* cond, oc_mutex* mutex)
 
 int oc_condition_timedwait(oc_condition* cond, oc_mutex* mutex, f64 seconds)
 {
-    const f32 ms = (seconds == INFINITY) ? (f32)INFINITE : seconds * 1000;
+    const DWORD ms = (seconds == INFINITY) ? INFINITE : (DWORD)(seconds * 1000);
     if(!SleepConditionVariableSRW(&cond->cond, &mutex->lock, ms, 0))
     {
         return (GetLastError());

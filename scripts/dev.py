@@ -602,8 +602,12 @@ def build_tool_win(release, version, outname):
         "/I", "../ext/microtar"
     ]
 
-    # debug_flags = ["/O2"] if release else ["/Zi", "/DOC_DEBUG", "/DOC_LOG_COMPILE_DEBUG", "/W3"]
-    debug_flags = ["/O2"] if release else ["/Zi", "/DOC_DEBUG", "/DOC_LOG_COMPILE_DEBUG"]
+
+    debug_flags = ["/W4", "/WX", "/wd4057"]
+    if release:
+        debug_flags.extend(["/O2"])
+    else:
+        debug_flags.extend(["/Zi", "/DOC_DEBUG", "/DOC_LOG_COMPILE_DEBUG", "/fsanitize=address"])
 
     libs = [
         "shlwapi.lib",

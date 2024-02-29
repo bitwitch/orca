@@ -104,7 +104,6 @@ oc_str8 oc_path_append(oc_arena* arena, oc_str8 parent, oc_str8 relPath)
 
 oc_str8 oc_path_executable_relative(oc_arena* arena, oc_str8 relPath)
 {
-    oc_str8_list list = { 0 };
     oc_arena_scope scratch = oc_scratch_begin_next(arena);
 
     oc_str8 executablePath = oc_path_executable(scratch.arena);

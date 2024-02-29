@@ -58,7 +58,9 @@ int bundle(int argc, char** argv)
     oc_str8_list* resource_dirs = flag_strs(&c, "D", "resource-dir", "copy the contents of a folder to the app's resource directory");
     char** app_version = flag_str(&c, NULL, "app-version", "0.0.0", "a version number to embed in the application bundle");
     char** outDir = flag_str(&c, "C", "out-dir", NULL, "where to place the final application bundle (defaults to the current directory)");
+#ifdef OC_PLATFORM_MACOS
     bool* mtlEnableCapture = flag_bool(&c, "M", "mtl-enable-capture", false, "enable Metal frame capture in Xcode for the application bundle (macOS only)");
+#endif
 
     char** module = flag_pos(&c, "module", "a .wasm file containing the application's wasm module");
 
@@ -121,6 +123,7 @@ int winBundle(
     oc_str8 outDir,
     oc_str8 module)
 {
+    (void)app_version;
     //-----------------------------------------------------------
     //NOTE: make bundle directory structure
     //-----------------------------------------------------------

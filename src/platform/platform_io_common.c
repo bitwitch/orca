@@ -114,7 +114,7 @@ oc_file_status oc_file_get_status(oc_file file)
                       .size = sizeof(oc_file_status),
                       .buffer = (char*)&status };
 
-    oc_io_cmp cmp = oc_io_wait_single_req(&req);
+    oc_io_wait_single_req(&req);
     return (status);
 }
 

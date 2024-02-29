@@ -32,7 +32,7 @@ static size_t curl_callback_write_to_file(char* data, size_t size, size_t nmemb,
 static const char* curl_last_error(CURLcode code);
 static CURLcode download_file(CURL* handle, oc_str8 url, oc_str8 out_path);
 static bool overwrite_current_version(oc_str8 new_version);
-static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str8 orca_dir, oc_str8 old_version, oc_str8 new_version);
+static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str8 orca_dir, oc_str8 new_version);
 
 int update(int argc, char** argv)
 {
@@ -107,7 +107,7 @@ int update(int argc, char** argv)
     oc_str8 current_tool_version = OC_STR8(TOSTRING(ORCA_TOOL_VERSION));
     if(oc_str8_cmp(current_tool_version, version) != 0)
     {
-        return replace_yourself_and_update(curl, repo_url_base, orca_dir, current_tool_version, version);
+        return replace_yourself_and_update(curl, repo_url_base, orca_dir, version);
     }
 
     //-----------------------------------------------------------------------------
@@ -264,8 +264,7 @@ cleanup:
 }
 
 #if OC_PLATFORM_WINDOWS
-static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str8 orca_dir,
-                                       oc_str8 old_version, oc_str8 new_version)
+static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str8 orca_dir, oc_str8 new_version)
 {
     int result = 0;
     oc_arena_scope scratch = oc_scratch_begin();
@@ -315,8 +314,7 @@ cleanup:
 
 #elif OC_PLATFORM_MACOS
 
-static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str8 orca_dir,
-                                       oc_str8 old_version, oc_str8 new_version)
+static int replace_yourself_and_update(CURL* curl, oc_str8 repo_url_base, oc_str8 orca_dir, oc_str8 new_version)
 {
     int result = 0;
     oc_arena_scope scratch = oc_scratch_begin();

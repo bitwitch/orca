@@ -81,7 +81,7 @@ oc_str16 win32_path_from_handle_null_terminated(oc_arena* arena, HANDLE handle)
     if(res.len)
     {
         res.ptr = oc_arena_push_array(arena, u16, res.len);
-        if(!GetFinalPathNameByHandleW(handle, res.ptr, res.len, FILE_NAME_NORMALIZED))
+        if(!GetFinalPathNameByHandleW(handle, res.ptr, (DWORD)res.len, FILE_NAME_NORMALIZED))
         {
             res.len = 0;
             res.ptr = 0;
@@ -229,11 +229,8 @@ bool oc_io_raw_file_exists_at(oc_file_desc dirFd, oc_str8 path, oc_file_open_fla
     return (result);
 }
 
-enum
-{
-    OC_NTP_01_JAN_1601 = -9435484800LL,
-    OC_WIN32_TICKS_PER_SECOND = 10000000LL
-};
+#define OC_NTP_01_JAN_1601        -9435484800LL
+#define OC_WIN32_TICKS_PER_SECOND 10000000LL
 
 oc_datestamp oc_datestamp_from_win32_filetime(FILETIME ft)
 {
@@ -336,6 +333,7 @@ oc_io_error oc_io_raw_fstat(oc_file_desc fd, oc_file_status* status)
 
 oc_io_error oc_io_raw_fstat_at(oc_file_desc dirFd, oc_str8 name, oc_file_open_flags openFlags, oc_file_status* status)
 {
+    (void)openFlags;
     oc_io_error error = OC_IO_OK;
     oc_file_desc fd = oc_io_raw_open_at(dirFd, name, OC_FILE_ACCESS_NONE, OC_FILE_OPEN_SYMLINK);
     if(oc_file_desc_is_nil(fd))
@@ -425,6 +423,7 @@ oc_io_raw_read_link_result oc_io_raw_read_link_at(oc_arena* arena, oc_file_desc 
 
 static oc_io_cmp oc_io_close(oc_file_slot* slot, oc_io_req* req, oc_file_table* table)
 {
+    (void)req;
     oc_io_cmp cmp = { 0 };
     if(slot->fd)
     {
@@ -454,7 +453,7 @@ static oc_io_cmp oc_io_seek(oc_file_slot* slot, oc_io_req* req)
 {
     oc_io_cmp cmp = { 0 };
 
-    DWORD whence;
+    DWORD whence = 0;
     switch(req->whence)
     {
         case OC_FILE_SEEK_CURRENT:
@@ -498,7 +497,7 @@ static oc_io_cmp oc_io_read(oc_file_slot* slot, oc_io_req* req)
     {
         DWORD bytesRead = 0;
 
-        if(!ReadFile(slot->fd, req->buffer, req->size, &bytesRead, NULL))
+        if(!ReadFile(slot->fd, req->buffer, (DWORD)req->size, &bytesRead, NULL))
         {
             slot->error = oc_io_raw_last_error();
             cmp.result = 0;
@@ -525,7 +524,7 @@ static oc_io_cmp oc_io_write(oc_file_slot* slot, oc_io_req* req)
     {
         DWORD bytesWritten = 0;
 
-        if(!WriteFile(slot->fd, req->buffer, req->size, &bytesWritten, NULL))
+        if(!WriteFile(slot->fd, req->buffer, (DWORD)req->size, &bytesWritten, NULL))
         {
             slot->error = oc_io_raw_last_error();
             cmp.result = 0;
@@ -541,6 +540,7 @@ static oc_io_cmp oc_io_write(oc_file_slot* slot, oc_io_req* req)
 
 static oc_io_cmp oc_io_get_error(oc_file_slot* slot, oc_io_req* req)
 {
+    (void)req;
     oc_io_cmp cmp = { 0 };
     cmp.result = slot->error;
     return (cmp);

@@ -105,7 +105,7 @@ void* oc_arena_push_aligned(oc_arena* arena, u64 size, u32 alignment)
     }
     if(!chunk)
     {
-        u64 chunkMinSize = oc_max(lastCap * 1.5, size + alignment);
+        u64 chunkMinSize = oc_max((u64)(lastCap * 1.5), size + alignment);
 
         chunk = oc_arena_chunk_alloc(arena, chunkMinSize);
         alignedOffset = oc_align_up_pow2(chunk->offset, alignment);
@@ -238,7 +238,7 @@ ORCA_API oc_arena_scope oc_scratch_begin_next(oc_arena* used)
     if((used >= __scratchPool)
        && (used - __scratchPool < OC_SCRATCH_POOL_SIZE))
     {
-        u64 index = used - __scratchPool;
+        int index = (int)(used - __scratchPool);
         if(index + 1 < OC_SCRATCH_POOL_SIZE)
         {
             arena = oc_scratch_at_index(index + 1);

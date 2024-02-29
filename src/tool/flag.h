@@ -142,7 +142,7 @@ oc_str8 oc_str8_toupper_inplace(oc_str8 str)
 {
     for(int i = 0; i < str.len; i++)
     {
-        str.ptr[i] = toupper(str.ptr[i]);
+        str.ptr[i] = (char)toupper(str.ptr[i]);
     }
     return str;
 }
@@ -322,9 +322,9 @@ bool flag_parse(Flag_Context* c, int argc, char** argv)
             Flag* flagObj = &c->flags[i];
 
             const char* expectedName = longFlag ? flagObj->longName : flagObj->shortName;
-            int expectedLen = strlen(expectedName);
+            size_t expectedLen = strlen(expectedName);
 
-            int flagLen = strlen(flag);
+            size_t flagLen = strlen(flag);
             char* eq = strchr(flag, '=');
             if(eq)
             {
@@ -480,9 +480,9 @@ bool flag_parse_command(Flag_Context* c)
 
 typedef struct
 {
-    int width;
-    int cur;
-    int indent;
+    size_t width;
+    size_t cur;
+    size_t indent;
 } Flag_Textwrap;
 
 void flag_wrap_fnewline(FILE* f, Flag_Textwrap* w)
@@ -516,7 +516,7 @@ void flag_wrap_fprintln(FILE* f, Flag_Textwrap* w, oc_str8 str)
     flag_wrap_fnewline(f, w);
 }
 
-void flag_wrap_fadvanceto(FILE* f, Flag_Textwrap* w, int pos)
+void flag_wrap_fadvanceto(FILE* f, Flag_Textwrap* w, size_t pos)
 {
     if(w->cur >= pos)
     {
@@ -590,7 +590,7 @@ options:
   --version VERSION     a version number to embed in the application bundle
   --mtl-enable-capture  Enable Metal frame capture for the application bundle (macOS only)
 */
-void flag_print_usage(Flag_Context* c, const char* cmd, FILE* f)
+void flag_print_usage(Flag_Context* c, const char* prefix, FILE* f)
 {
     oc_arena* a = &c->a;
     Flag_Textwrap w = (Flag_Textwrap){
@@ -601,9 +601,9 @@ void flag_print_usage(Flag_Context* c, const char* cmd, FILE* f)
 
     // Usage
     {
-        oc_str8 prefix = oc_str8_pushf(a, "usage: %s ", cmd);
-        fputs(prefix.ptr, f);
-        w.indent = prefix.len;
+        oc_str8 usage = oc_str8_pushf(a, "usage: %s ", prefix);
+        fputs(usage.ptr, f);
+        w.indent = usage.len;
 
         flag_wrap_fprint(f, &w, OC_STR8("[-h] "));
 
@@ -707,12 +707,12 @@ void flag_print_usage(Flag_Context* c, const char* cmd, FILE* f)
                                      ? oc_str8_pushf(a, " %s", flag->valueName)
                                      : OC_STR8("");
 
-            oc_str8 shortOut, longOut;
+            oc_str8 shortOut = {0};
             if(hasShort)
             {
                 shortOut = oc_str8_pushf(a, "-%s%s", flag->shortName, valueNameOut.ptr);
             }
-            longOut = oc_str8_pushf(a, "--%s%s", flag->longName, valueNameOut.ptr);
+            oc_str8 longOut = oc_str8_pushf(a, "--%s%s", flag->longName, valueNameOut.ptr);
 
             oc_str8 bothFlags = hasShort
                                   ? oc_str8_pushf(a, "%s, %s", shortOut.ptr, longOut.ptr)

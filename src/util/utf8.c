@@ -130,7 +130,7 @@ oc_utf8_dec oc_utf8_decode_at(oc_str8 string, u64 offset)
     //              next oc_utf8 character
     //TODO(martin): check for utf-16 surrogate pairs
     oc_utf32 cp = 0;
-    u64 sz = 0;
+    u32 sz = 0;
 
     if(offset >= string.len || !string.ptr[offset])
     {
@@ -145,7 +145,7 @@ oc_utf8_dec oc_utf8_decode_at(oc_str8 string, u64 offset)
     }
     else
     {
-        int expectedSize = oc_utf8_size_from_leading_char(string.ptr[offset]);
+        u32 expectedSize = oc_utf8_size_from_leading_char(string.ptr[offset]);
         do
         {
             /*NOTE(martin):
@@ -206,20 +206,20 @@ oc_str8 oc_utf8_encode(char* dest, oc_utf32 codePoint)
     }
     else if(codePoint < 0x800)
     {
-        dest[0] = (codePoint >> 6) | 0xC0;
+        dest[0] = (char)((codePoint >> 6) | 0xC0);
         dest[1] = (codePoint & 0x3F) | 0x80;
         sz = 2;
     }
     else if(codePoint < 0x10000)
     {
-        dest[0] = (codePoint >> 12) | 0xE0;
+        dest[0] = (char)((codePoint >> 12) | 0xE0);
         dest[1] = ((codePoint >> 6) & 0x3F) | 0x80;
         dest[2] = (codePoint & 0x3F) | 0x80;
         sz = 3;
     }
     else if(codePoint < 0x110000)
     {
-        dest[0] = (codePoint >> 18) | 0xF0;
+        dest[0] = (char)((codePoint >> 18) | 0xF0);
         dest[1] = ((codePoint >> 12) & 0x3F) | 0x80;
         dest[2] = ((codePoint >> 6) & 0x3F) | 0x80;
         dest[3] = (codePoint & 0x3F) | 0x80;

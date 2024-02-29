@@ -105,7 +105,7 @@ bool isspace_cheap(int c)
 
 oc_str8 oc_str8_trim_space(oc_str8 s)
 {
-    u64 start, end;
+    u64 start = 0, end = 0;
     for(u64 i = 0; i < s.len; i++)
     {
         start = i;

@@ -1,3 +1,5 @@
+#pragma warning(push)
+#pragma warning(disable: 4100)
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -5,6 +7,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STBI_WRITE_NO_STDIO
 #include "stb_image_write.h"
+#pragma warning(pop)
 
 typedef struct
 {
@@ -43,7 +46,6 @@ bool icon_from_image(oc_arena* a, oc_str8 image_path, oc_str8 ico_path)
     header.image_type = 1;
     header.num_images = (u16)num_sizes;
 
-    oc_str8 input_dir = oc_path_slice_directory(image_path);
     oc_file ico_file = oc_file_open(ico_path, OC_FILE_ACCESS_WRITE, OC_FILE_OPEN_CREATE);
     if(oc_file_last_error(ico_file) != OC_IO_OK)
     {

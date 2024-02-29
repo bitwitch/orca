@@ -39,12 +39,12 @@ oc_str8 oc_str8_push_buffer(oc_arena* arena, u64 len, char* buffer)
 
 oc_str8 oc_str8_push_cstring(oc_arena* arena, const char* str)
 {
-    int len = 0;
+    size_t len = 0;
     if(str)
     {
         len = strlen(str);
     }
-    return (oc_str8_push_buffer(arena, strlen(str), (char*)str));
+    return (oc_str8_push_buffer(arena, len, (char*)str));
 }
 
 oc_str8 oc_str8_push_copy(oc_arena* arena, oc_str8 s)

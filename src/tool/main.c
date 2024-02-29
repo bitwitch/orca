@@ -108,6 +108,4 @@ int main(int argc, char** argv)
         fprintf(stderr, "ERROR: didn't handle all available commands or something, o no\n");
         return 1;
     }
-
-    return 0;
 }

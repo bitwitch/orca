@@ -427,6 +427,7 @@ bool oc_io_raw_file_exists_at(oc_file_desc dirFd, oc_str8 path, oc_file_open_fla
 
 oc_io_cmp oc_io_close(oc_file_slot* slot, oc_io_req* req, oc_file_table* table)
 {
+    (void)req;
     oc_io_cmp cmp = { 0 };
     if(slot->fd >= 0)
     {
@@ -527,6 +528,7 @@ oc_io_cmp oc_io_write(oc_file_slot* slot, oc_io_req* req)
 
 oc_io_cmp oc_io_get_error(oc_file_slot* slot, oc_io_req* req)
 {
+    (void)req;
     oc_io_cmp cmp = { 0 };
     cmp.result = slot->error;
     return (cmp);
