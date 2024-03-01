@@ -387,10 +387,10 @@ void oc_gl_canvas_encode_path(oc_gl_canvas_backend* backend, oc_primitive* primi
         path->textureID = -1;
     }
 
-    int firstTileX = path->box.x * scale / OC_GL_TILE_SIZE;
-    int firstTileY = path->box.y * scale / OC_GL_TILE_SIZE;
-    int lastTileX = path->box.z * scale / OC_GL_TILE_SIZE;
-    int lastTileY = path->box.w * scale / OC_GL_TILE_SIZE;
+    int firstTileX = (int)(path->box.x * scale / OC_GL_TILE_SIZE);
+    int firstTileY = (int)(path->box.y * scale / OC_GL_TILE_SIZE);
+    int lastTileX = (int)(path->box.z * scale / OC_GL_TILE_SIZE);
+    int lastTileY = (int)(path->box.w * scale / OC_GL_TILE_SIZE);
 
     int nTilesX = lastTileX - firstTileX + 1;
     int nTilesY = lastTileY - firstTileY + 1;
@@ -434,7 +434,7 @@ static bool oc_offset_hull(int count, oc_vec2* p, oc_vec2* result, f32 offset)
         oc_vec2 n = { p[i].y - p[i + 1].y,
                       p[i + 1].x - p[i].x };
 
-        f32 norm = sqrt(n.x * n.x + n.y * n.y);
+        f32 norm = sqrtf(n.x * n.x + n.y * n.y);
         if(norm >= 1e-6)
         {
             n = oc_vec2_mul(offset / norm, n);
@@ -598,8 +598,8 @@ void oc_gl_encode_stroke_line(oc_gl_canvas_backend* backend, oc_vec2* p)
 
     oc_vec2 v = { p[1].x - p[0].x, p[1].y - p[0].y };
     oc_vec2 n = { v.y, -v.x };
-    f32 norm = sqrt(n.x * n.x + n.y * n.y);
-    oc_vec2 offset = oc_vec2_mul(0.5 * width / norm, n);
+    f32 norm = sqrtf(n.x * n.x + n.y * n.y);
+    oc_vec2 offset = oc_vec2_mul(0.5f * width / norm, n);
 
     oc_vec2 left[2] = { oc_vec2_add(p[0], offset), oc_vec2_add(p[1], offset) };
     oc_vec2 right[2] = { oc_vec2_add(p[1], oc_vec2_mul(-1, offset)), oc_vec2_add(p[0], oc_vec2_mul(-1, offset)) };
@@ -621,10 +621,10 @@ enum
 void oc_gl_encode_stroke_quadratic(oc_gl_canvas_backend* backend, oc_vec2* p)
 {
     f32 width = backend->primitive->attributes.width;
-    f32 tolerance = oc_min(backend->primitive->attributes.tolerance, 0.5 * width);
+    f32 tolerance = oc_min(backend->primitive->attributes.tolerance, 0.5f * width);
 
     //NOTE: check for degenerate line case
-    const f32 equalEps = 1e-3;
+    const f32 equalEps = 1e-3f;
     if(oc_vec2_close(p[0], p[1], equalEps))
     {
         oc_gl_encode_stroke_line(backend, p + 1);
@@ -652,10 +652,10 @@ void oc_gl_encode_stroke_quadratic(oc_gl_canvas_backend* backend, oc_vec2* p)
     }
     else
     {
-        f32 checkSamples[OC_HULL_CHECK_SAMPLE_COUNT] = { 1. / 6, 2. / 6, 3. / 6, 4. / 6, 5. / 6 };
+        f32 checkSamples[OC_HULL_CHECK_SAMPLE_COUNT] = { 1.f / 6, 2.f / 6, 3.f / 6, 4.f / 6, 5.f / 6 };
 
-        f32 d2LowBound = oc_square(0.5 * width - tolerance);
-        f32 d2HighBound = oc_square(0.5 * width + tolerance);
+        f32 d2LowBound = oc_square(0.5f * width - tolerance);
+        f32 d2HighBound = oc_square(0.5f * width + tolerance);
 
         f32 maxOvershoot = 0;
         f32 maxOvershootParameter = 0;
@@ -711,10 +711,10 @@ void oc_gl_encode_stroke_quadratic(oc_gl_canvas_backend* backend, oc_vec2* p)
 void oc_gl_encode_stroke_cubic(oc_gl_canvas_backend* backend, oc_vec2* p)
 {
     f32 width = backend->primitive->attributes.width;
-    f32 tolerance = oc_min(backend->primitive->attributes.tolerance, 0.5 * width);
+    f32 tolerance = oc_min(backend->primitive->attributes.tolerance, 0.5f * width);
 
     //NOTE: check degenerate line cases
-    f32 equalEps = 1e-3;
+    f32 equalEps = 1e-3f;
 
     if((oc_vec2_close(p[0], p[1], equalEps) && oc_vec2_close(p[2], p[3], equalEps))
        || (oc_vec2_close(p[0], p[1], equalEps) && oc_vec2_close(p[1], p[2], equalEps))
@@ -726,13 +726,13 @@ void oc_gl_encode_stroke_cubic(oc_gl_canvas_backend* backend, oc_vec2* p)
     }
     else if(oc_vec2_close(p[0], p[1], equalEps) && oc_vec2_close(p[1], p[3], equalEps))
     {
-        oc_vec2 line[2] = { p[0], oc_vec2_add(oc_vec2_mul(5. / 9, p[0]), oc_vec2_mul(4. / 9, p[2])) };
+        oc_vec2 line[2] = { p[0], oc_vec2_add(oc_vec2_mul(5.f / 9, p[0]), oc_vec2_mul(4.f / 9, p[2])) };
         oc_gl_encode_stroke_line(backend, line);
         return;
     }
     else if(oc_vec2_close(p[0], p[2], equalEps) && oc_vec2_close(p[2], p[3], equalEps))
     {
-        oc_vec2 line[2] = { p[0], oc_vec2_add(oc_vec2_mul(5. / 9, p[0]), oc_vec2_mul(4. / 9, p[1])) };
+        oc_vec2 line[2] = { p[0], oc_vec2_add(oc_vec2_mul(5.f / 9, p[0]), oc_vec2_mul(4.f / 9, p[1])) };
         oc_gl_encode_stroke_line(backend, line);
         return;
     }
@@ -753,10 +753,10 @@ void oc_gl_encode_stroke_cubic(oc_gl_canvas_backend* backend, oc_vec2* p)
     }
     else
     {
-        f32 checkSamples[OC_HULL_CHECK_SAMPLE_COUNT] = { 1. / 6, 2. / 6, 3. / 6, 4. / 6, 5. / 6 };
+        f32 checkSamples[OC_HULL_CHECK_SAMPLE_COUNT] = { 1.f / 6, 2.f / 6, 3.f / 6, 4.f / 6, 5.f / 6 };
 
-        f32 d2LowBound = oc_square(0.5 * width - tolerance);
-        f32 d2HighBound = oc_square(0.5 * width + tolerance);
+        f32 d2LowBound = oc_square(0.5f * width - tolerance);
+        f32 d2HighBound = oc_square(0.5f * width + tolerance);
 
         f32 maxOvershoot = 0;
         f32 maxOvershootParameter = 0;
@@ -879,8 +879,8 @@ void oc_gl_stroke_cap(oc_gl_canvas_backend* backend,
     oc_attributes* attributes = &backend->primitive->attributes;
 
     //NOTE(martin): compute the tangent and normal vectors (multiplied by half width) at the cap point
-    f32 dn = sqrt(oc_square(direction.x) + oc_square(direction.y));
-    f32 alpha = 0.5 * attributes->width / dn;
+    f32 dn = sqrtf(oc_square(direction.x) + oc_square(direction.y));
+    f32 alpha = 0.5f * attributes->width / dn;
 
     oc_vec2 n0 = { -alpha * direction.y,
                    alpha * direction.x };
@@ -908,8 +908,8 @@ void oc_gl_stroke_joint(oc_gl_canvas_backend* backend,
     oc_attributes* attributes = &backend->primitive->attributes;
 
     //NOTE(martin): compute the normals at the joint point
-    f32 norm_t0 = sqrt(oc_square(t0.x) + oc_square(t0.y));
-    f32 norm_t1 = sqrt(oc_square(t1.x) + oc_square(t1.y));
+    f32 norm_t0 = sqrtf(oc_square(t0.x) + oc_square(t0.y));
+    f32 norm_t1 = sqrtf(oc_square(t1.x) + oc_square(t1.y));
 
     oc_vec2 n0 = { -t0.y, t0.x };
     n0.x /= norm_t0;
@@ -935,7 +935,7 @@ void oc_gl_stroke_joint(oc_gl_canvas_backend* backend,
 		then v = u * (2*offset / norm(u)^2)
 		(this can be derived from writing the pythagoras theorems in the triangles of the joint)
 	*/
-    f32 halfW = 0.5 * attributes->width;
+    f32 halfW = 0.5f * attributes->width;
     oc_vec2 u = { n0.x + n1.x, n0.y + n1.y };
     f32 uNormSquare = u.x * u.x + u.y * u.y;
     f32 alpha = attributes->width / uNormSquare;
@@ -1070,7 +1070,7 @@ void oc_gl_grow_buffer_if_needed(GLuint buffer, i32 wantedSize, const char* name
     {
         oc_log_info("growing %s buffer\n", name);
 
-        int newSize = wantedSize * 1.2;
+        int newSize = (int)(wantedSize * 1.2f);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
         glBufferData(GL_SHADER_STORAGE_BUFFER, newSize, 0, GL_DYNAMIC_COPY);
@@ -1086,6 +1086,8 @@ void oc_gl_render_batch(oc_gl_canvas_backend* backend,
                         oc_vec2 viewportSize,
                         f32 scale)
 {
+    (void)surface;
+    (void)viewportSize;
     GLuint pathBuffer = backend->pathBuffer[backend->bufferIndex].buffer;
     GLuint elementBuffer = backend->elementBuffer[backend->bufferIndex].buffer;
 
@@ -1369,7 +1371,7 @@ void oc_gl_canvas_resize(oc_gl_canvas_backend* backend, oc_vec2 size)
         glDeleteTextures(1, &backend->outTexture);
         glGenTextures(1, &backend->outTexture);
         glBindTexture(GL_TEXTURE_2D, backend->outTexture);
-        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, size.x, size.y);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, (int)size.x, (int)size.y);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
@@ -1412,7 +1414,7 @@ void oc_gl_canvas_render(oc_canvas_backend* interface,
         oc_gl_canvas_resize(backend, viewportSize);
     }
 
-    glViewport(0, 0, viewportSize.x, viewportSize.y);
+    glViewport(0, 0, (int)viewportSize.x, (int)viewportSize.y);
 
     //NOTE: clear screen and reset input buffer offsets
     glEnable(GL_BLEND);
@@ -1434,7 +1436,7 @@ void oc_gl_canvas_render(oc_canvas_backend* interface,
     int imageCount = 0;
     backend->eltCount = 0;
 
-    for(int primitiveIndex = 0; primitiveIndex < primitiveCount; primitiveIndex++)
+    for(u32 primitiveIndex = 0; primitiveIndex < primitiveCount; primitiveIndex++)
     {
         oc_primitive* primitive = &primitives[primitiveIndex];
 
@@ -1491,7 +1493,7 @@ void oc_gl_canvas_render(oc_canvas_backend* interface,
             else
             {
                 int segCount = 0;
-                for(int eltIndex = 0;
+                for(u32 eltIndex = 0;
                     (eltIndex < primitive->path.count) && (primitive->path.startIndex + eltIndex < eltCount);
                     eltIndex++)
                 {
@@ -1546,6 +1548,7 @@ void oc_gl_canvas_render(oc_canvas_backend* interface,
 //--------------------------------------------------------------------
 oc_image_data* oc_gl_canvas_image_create(oc_canvas_backend* interface, oc_vec2 size)
 {
+    (void)interface;
     oc_gl_image* image = 0;
 
     image = oc_malloc_type(oc_gl_image);
@@ -1553,7 +1556,7 @@ oc_image_data* oc_gl_canvas_image_create(oc_canvas_backend* interface, oc_vec2 s
     {
         glGenTextures(1, &image->texture);
         glBindTexture(GL_TEXTURE_2D, image->texture);
-        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, size.x, size.y);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, (int)size.x, (int)size.y);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -1564,6 +1567,7 @@ oc_image_data* oc_gl_canvas_image_create(oc_canvas_backend* interface, oc_vec2 s
 
 void oc_gl_canvas_image_destroy(oc_canvas_backend* interface, oc_image_data* imageInterface)
 {
+    (void)interface;
     //TODO: check that this image belongs to this backend
     oc_gl_image* image = (oc_gl_image*)imageInterface;
     glDeleteTextures(1, &image->texture);
@@ -1575,10 +1579,11 @@ void oc_gl_canvas_image_upload_region(oc_canvas_backend* interface,
                                       oc_rect region,
                                       u8* pixels)
 {
+    (void)interface;
     //TODO: check that this image belongs to this backend
     oc_gl_image* image = (oc_gl_image*)imageInterface;
     glBindTexture(GL_TEXTURE_2D, image->texture);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, region.x, region.y, region.w, region.h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, (int)region.x, (int)region.y, (int)region.w, (int)region.h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
 
 //--------------------------------------------------------------------
@@ -1751,7 +1756,7 @@ oc_canvas_backend* oc_gl_canvas_backend_create(oc_wgl_surface* surface)
 
         glGenTextures(1, &backend->outTexture);
         glBindTexture(GL_TEXTURE_2D, backend->outTexture);
-        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, backend->frameSize.x, backend->frameSize.y);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, (int)backend->frameSize.x, (int)backend->frameSize.y);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 

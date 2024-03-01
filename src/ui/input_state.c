@@ -236,7 +236,7 @@ u8 oc_key_state_press_count(oc_input_state* input, oc_key_state* key)
     u8 count = 0;
     if(key->lastUpdate == input->frameCounter)
     {
-        count = key->transitionCount / 2;
+        count = (u8)(key->transitionCount / 2);
         if(key->down)
         {
             //NOTE: add one if state is down transition count is odd
@@ -251,7 +251,7 @@ u8 oc_key_state_release_count(oc_input_state* input, oc_key_state* key)
     u8 count = 0;
     if(key->lastUpdate == input->frameCounter)
     {
-        count = key->transitionCount / 2;
+        count = (u8)(key->transitionCount / 2);
         if(!key->down)
         {
             //NOTE: add one if state is up and transition count is odd
@@ -266,7 +266,7 @@ u8 oc_key_state_repeat_count(oc_input_state* input, oc_key_state* key)
     u8 count = 0;
     if(key->lastUpdate == input->frameCounter)
     {
-        count = key->repeatCount;
+        count = (u8)key->repeatCount;
     }
     return (count);
 }

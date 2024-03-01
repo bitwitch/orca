@@ -306,7 +306,7 @@ static void oc_win32_process_mouse_event(oc_window_data* window, oc_key_action a
     event.key.action = action;
     event.key.button = button;
     event.key.mods = oc_get_mod_keys();
-    event.key.clickCount = oc_appData.win32.clickCount[button];
+    event.key.clickCount = (u8)oc_appData.win32.clickCount[button];
 
     oc_queue_event(&event);
 }
@@ -317,7 +317,7 @@ static void oc_win32_process_wheel_event(oc_window_data* window, f32 x, f32 y)
     event.window = oc_window_handle_from_ptr(window);
     event.type = OC_EVENT_MOUSE_WHEEL;
     // Borrowed from https://source.chromium.org/chromium/chromium/src/+/3e1a26c44c024d97dc9a4c09bbc6a2365398ca2c:ui/events/blink/web_input_event_builders_win.cc;l=318-330
-    f32 scrollMultiplier = oc_appData.win32.wheelScrollLines * 100.0 / 3.0;
+    f32 scrollMultiplier = oc_appData.win32.wheelScrollLines * 100.0f / 3.0f;
     event.mouse.deltaX = x / WHEEL_DELTA * scrollMultiplier;
     event.mouse.deltaY = -y / WHEEL_DELTA * scrollMultiplier;
     event.mouse.mods = oc_get_mod_keys();
@@ -397,7 +397,7 @@ LRESULT oc_win32_win_proc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM
 
         case WM_DPICHANGED:
         {
-            u32 dpi = HIWORD(wParam);
+            // u32 dpi = HIWORD(wParam);
             RECT rect = *(RECT*)lParam;
 
             SetWindowPos(mpWindow->win32.hWnd,
@@ -423,7 +423,7 @@ LRESULT oc_win32_win_proc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM
         case WM_SIZING:
         case WM_MOVING:
         {
-            RECT* rect = (RECT*)lParam;
+            // RECT* rect = (RECT*)lParam;
 
             oc_event event = { 0 };
             event.type = message == WM_SIZING ? OC_EVENT_WINDOW_RESIZE : OC_EVENT_WINDOW_MOVE;
@@ -530,7 +530,7 @@ LRESULT oc_win32_win_proc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM
             GetClientRect(mpWindow->win32.hWnd, &rect);
 
             u32 dpi = GetDpiForWindow(mpWindow->win32.hWnd);
-            f32 scaling = (f32)dpi / 96.;
+            f32 scaling = (f32)dpi / 96.0f;
 
             oc_event event = { 0 };
             event.window = oc_window_handle_from_ptr(mpWindow);
@@ -543,8 +543,8 @@ LRESULT oc_win32_win_proc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM
                 event.mouse.deltaX = event.mouse.x - oc_appData.win32.lastMousePos.x;
                 event.mouse.deltaY = event.mouse.y - oc_appData.win32.lastMousePos.y;
             }
-            if(abs(event.mouse.x - oc_appData.win32.lastMousePos.x) > GetSystemMetrics(SM_CXDOUBLECLK) / 2
-               || abs(event.mouse.y - oc_appData.win32.lastMousePos.y) > GetSystemMetrics(SM_CYDOUBLECLK) / 2)
+            if(fabs(event.mouse.x - oc_appData.win32.lastMousePos.x) > GetSystemMetrics(SM_CXDOUBLECLK) / 2.0f
+               || fabs(event.mouse.y - oc_appData.win32.lastMousePos.y) > GetSystemMetrics(SM_CYDOUBLECLK) / 2.0f)
             {
                 for(int i = 0; i < OC_MOUSE_BUTTON_COUNT; i++)
                 {
@@ -653,7 +653,7 @@ LRESULT oc_win32_win_proc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM
                 event.type = OC_EVENT_KEYBOARD_CHAR;
                 event.character.codepoint = (oc_utf32)wParam;
                 oc_str8 seq = oc_utf8_encode(event.character.sequence, event.character.codepoint);
-                event.character.seqLen = seq.len;
+                event.character.seqLen = (u8)seq.len;
                 oc_queue_event(&event);
             }
         }
@@ -762,6 +762,9 @@ i32 oc_dispatch_on_main_thread_sync(oc_window main_window, oc_dispatch_proc proc
 
 oc_window oc_window_create(oc_rect rect, oc_str8 title, oc_window_style style)
 {
+    // TODO: translate style flags into whatever windows needs
+    (void)style;
+
     WNDCLASS windowClass = { .style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
                              .lpfnWndProc = oc_win32_win_proc,
                              .hInstance = GetModuleHandleW(NULL),
@@ -776,17 +779,17 @@ oc_window oc_window_create(oc_rect rect, oc_str8 title, oc_window_style style)
     }
 
     u32 dpiX, dpiY;
-    HMONITOR monitor = MonitorFromPoint((POINT){ rect.x, rect.y }, MONITOR_DEFAULTTOPRIMARY);
+    HMONITOR monitor = MonitorFromPoint((POINT){ (LONG)rect.x, (LONG)rect.y }, MONITOR_DEFAULTTOPRIMARY);
     GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
 
-    f32 scaleX = (f32)dpiX / 96.;
-    f32 scaleY = (f32)dpiY / 96.;
+    f32 scaleX = (f32)dpiX / 96.0f;
+    f32 scaleY = (f32)dpiY / 96.0f;
 
     RECT frame = {
-        rect.x * scaleX,
-        rect.y * scaleY,
-        (rect.x + rect.w) * scaleX,
-        (rect.y + rect.h) * scaleY
+        (LONG)(rect.x * scaleX),
+        (LONG)(rect.y * scaleY),
+        (LONG)((rect.x + rect.w) * scaleX),
+        (LONG)((rect.y + rect.h) * scaleY)
     };
 
     DWORD winStyle = WS_OVERLAPPEDWINDOW;
@@ -1029,7 +1032,7 @@ oc_rect oc_window_get_frame_rect(oc_window window)
         //      Note that contrary to what the GetWindowRect() docs suggests when mentionning
         //      this, DwmGetWindowAttributes() _does_ seem to adjust for DPI.
         u32 dpi = GetDpiForWindow(windowData->win32.hWnd);
-        f32 scale = (float)dpi / 96.;
+        f32 scale = (float)dpi / 96.0f;
 
         RECT frame;
         HRESULT res = DwmGetWindowAttribute(windowData->win32.hWnd,
@@ -1061,10 +1064,10 @@ static oc_rect oc_win32_get_drop_shadow_offsets(HWND hWnd)
                           sizeof(RECT));
 
     oc_rect extents = {
-        .x = frameIncludingShadow.left - frameExcludingShadow.left,
-        .y = frameIncludingShadow.top - frameExcludingShadow.top,
-        .w = frameIncludingShadow.right - frameExcludingShadow.right,
-        .h = frameIncludingShadow.bottom - frameExcludingShadow.bottom
+        .x = (f32)(frameIncludingShadow.left - frameExcludingShadow.left),
+        .y = (f32)(frameIncludingShadow.top - frameExcludingShadow.top),
+        .w = (f32)(frameIncludingShadow.right - frameExcludingShadow.right),
+        .h = (f32)(frameIncludingShadow.bottom - frameExcludingShadow.bottom)
     };
 
     return (extents);
@@ -1076,16 +1079,16 @@ void oc_window_set_frame_rect(oc_window window, oc_rect rect)
     if(windowData)
     {
         u32 dpi = GetDpiForWindow(windowData->win32.hWnd);
-        f32 scale = (float)dpi / 96.;
+        f32 scale = (float)dpi / 96.0f;
 
         //NOTE compute the size of the drop shadow to add it in setwindowpos
         oc_rect shadowOffsets = oc_win32_get_drop_shadow_offsets(windowData->win32.hWnd);
 
         RECT frame = {
-            rect.x * scale + shadowOffsets.x,
-            rect.y * scale + shadowOffsets.y,
-            (rect.x + rect.w) * scale + shadowOffsets.w,
-            (rect.y + rect.h) * scale + shadowOffsets.h
+            (LONG)(rect.x * scale + shadowOffsets.x),
+            (LONG)(rect.y * scale + shadowOffsets.y),
+            (LONG)((rect.x + rect.w) * scale + shadowOffsets.w),
+            (LONG)((rect.y + rect.h) * scale + shadowOffsets.h)
         };
 
         SetWindowPos(windowData->win32.hWnd,
@@ -1108,7 +1111,7 @@ oc_rect oc_window_get_content_rect(oc_window window)
         if(GetClientRect(windowData->win32.hWnd, &client))
         {
             u32 dpi = GetDpiForWindow(windowData->win32.hWnd);
-            f32 scale = (float)dpi / 96.;
+            f32 scale = (float)dpi / 96.0f;
 
             POINT origin = { 0, 0 };
             ClientToScreen(windowData->win32.hWnd, &origin);
@@ -1130,13 +1133,13 @@ void oc_window_set_content_rect(oc_window window, oc_rect rect)
     if(windowData)
     {
         u32 dpi = GetDpiForWindow(windowData->win32.hWnd);
-        f32 scale = (float)dpi / 96.;
+        f32 scale = (float)dpi / 96.0f;
 
         RECT frame = {
-            rect.x * scale,
-            rect.y * scale,
-            (rect.x + rect.w) * scale,
-            (rect.y + rect.h) * scale
+            (LONG)(rect.x * scale),
+            (LONG)(rect.y * scale),
+            (LONG)((rect.x + rect.w) * scale),
+            (LONG)((rect.y + rect.h) * scale)
         };
 
         DWORD style = GetWindowLong(windowData->win32.hWnd, GWL_STYLE);
@@ -1169,16 +1172,16 @@ void oc_window_center(oc_window window)
 
             int dpiX, dpiY;
             GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
-            f32 scaleX = dpiX / 96.;
-            f32 scaleY = dpiY / 96.;
+            f32 scaleX = dpiX / 96.0f;
+            f32 scaleY = dpiY / 96.0f;
 
             f32 monX = monitorInfo.rcWork.left / scaleX;
             f32 monY = monitorInfo.rcWork.top / scaleY;
             f32 monW = (monitorInfo.rcWork.right - monitorInfo.rcWork.left) / scaleX;
             f32 monH = (monitorInfo.rcWork.bottom - monitorInfo.rcWork.top) / scaleY;
 
-            frame.x = monX + 0.5 * (monW - frame.w);
-            frame.y = monY + 0.5 * (monH - frame.h);
+            frame.x = monX + 0.5f * (monW - frame.w);
+            frame.y = monY + 0.5f * (monH - frame.h);
 
             oc_window_set_frame_rect(window, frame);
         }
@@ -1204,14 +1207,14 @@ void oc_clipboard_set_string(oc_str8 string)
     {
         EmptyClipboard();
 
-        int wideCount = MultiByteToWideChar(CP_UTF8, 0, string.ptr, string.len, 0, 0);
+        int wideCount = MultiByteToWideChar(CP_UTF8, 0, string.ptr, (int)string.len, 0, 0);
         HANDLE handle = GlobalAlloc(GMEM_MOVEABLE, (wideCount + 1) * sizeof(wchar_t));
         if(handle)
         {
             char* memory = GlobalLock(handle);
             if(memory)
             {
-                MultiByteToWideChar(CP_UTF8, 0, string.ptr, string.len, (wchar_t*)memory, wideCount);
+                MultiByteToWideChar(CP_UTF8, 0, string.ptr, (int)string.len, (wchar_t*)memory, wideCount);
                 ((wchar_t*)memory)[wideCount] = '\0';
 
                 GlobalUnlock(handle);
@@ -1234,7 +1237,7 @@ oc_str8 oc_clipboard_get_string(oc_arena* arena)
             char* memory = GlobalLock(handle);
             if(memory)
             {
-                u64 size = WideCharToMultiByte(CP_UTF8, 0, (wchar_t*)memory, -1, 0, 0, 0, 0);
+                int size = WideCharToMultiByte(CP_UTF8, 0, (wchar_t*)memory, -1, 0, 0, 0, 0);
                 if(size)
                 {
                     string.ptr = oc_arena_push(arena, size);
@@ -1252,6 +1255,7 @@ oc_str8 oc_clipboard_get_string(oc_arena* arena)
 oc_str8 oc_clipboard_copy_string(oc_str8 backing)
 {
     //TODO
+    (void)backing;
     return ((oc_str8){ 0 });
 }
 
@@ -1264,7 +1268,7 @@ oc_str8 oc_clipboard_copy_string(oc_str8 backing)
 oc_vec2 oc_win32_surface_contents_scaling(oc_surface_data* surface)
 {
     u32 dpi = GetDpiForWindow(surface->layer.hWnd);
-    oc_vec2 contentsScaling = (oc_vec2){ (float)dpi / 96., (float)dpi / 96. };
+    oc_vec2 contentsScaling = (oc_vec2){ (float)dpi / 96.0f, (float)dpi / 96.0f };
     return (contentsScaling);
 }
 
@@ -1275,7 +1279,7 @@ oc_vec2 oc_win32_surface_get_size(oc_surface_data* surface)
     if(GetClientRect(surface->layer.hWnd, &rect))
     {
         u32 dpi = GetDpiForWindow(surface->layer.hWnd);
-        f32 scale = (float)dpi / 96.;
+        f32 scale = (float)dpi / 96.0f;
         size = (oc_vec2){ (rect.right - rect.left) / scale, (rect.bottom - rect.top) / scale };
     }
     return (size);
@@ -1518,9 +1522,9 @@ oc_file_dialog_result oc_file_dialog_for_table(oc_arena* arena, oc_file_dialog_d
                     oc_str8_list_push(scratch.arena, &list, elt->string);
                     oc_str8 filter = oc_str8_list_join(scratch.arena, list);
 
-                    int filterWideSize = 1 + MultiByteToWideChar(CP_UTF8, 0, filter.ptr, filter.len, NULL, 0);
+                    int filterWideSize = 1 + MultiByteToWideChar(CP_UTF8, 0, filter.ptr, (int)filter.len, NULL, 0);
                     filterSpecs[i].pszSpec = oc_arena_push_array(scratch.arena, wchar_t, filterWideSize);
-                    MultiByteToWideChar(CP_UTF8, 0, filter.ptr, filter.len, (LPWSTR)filterSpecs[i].pszSpec, filterWideSize);
+                    MultiByteToWideChar(CP_UTF8, 0, filter.ptr, (int)filter.len, (LPWSTR)filterSpecs[i].pszSpec, filterWideSize);
                     ((LPWSTR)(filterSpecs[i].pszSpec))[filterWideSize - 1] = 0;
 
                     filterSpecs[i].pszName = filterSpecs[i].pszSpec;
@@ -1620,9 +1624,9 @@ int oc_alert_popup(oc_str8 title,
     int i = 0;
     oc_list_for(options.list, elt, oc_str8_elt, listElt)
     {
-        int textWideSize = MultiByteToWideChar(CP_UTF8, 0, elt->string.ptr, elt->string.len, NULL, 0);
+        int textWideSize = MultiByteToWideChar(CP_UTF8, 0, elt->string.ptr, (int)elt->string.len, NULL, 0);
         wchar_t* textWide = oc_arena_push_array(scratch.arena, wchar_t, textWideSize + 1);
-        MultiByteToWideChar(CP_UTF8, 0, elt->string.ptr, elt->string.len, textWide, textWideSize);
+        MultiByteToWideChar(CP_UTF8, 0, elt->string.ptr, (int)elt->string.len, textWide, textWideSize);
         textWide[textWideSize] = '\0';
 
         buttons[i].nButtonID = i + 100;
@@ -1631,14 +1635,14 @@ int oc_alert_popup(oc_str8 title,
         i++;
     }
 
-    int titleWideSize = MultiByteToWideChar(CP_UTF8, 0, title.ptr, title.len, NULL, 0);
+    int titleWideSize = MultiByteToWideChar(CP_UTF8, 0, title.ptr, (int)title.len, NULL, 0);
     wchar_t* titleWide = oc_arena_push_array(scratch.arena, wchar_t, titleWideSize + 1);
-    MultiByteToWideChar(CP_UTF8, 0, title.ptr, title.len, titleWide, titleWideSize);
+    MultiByteToWideChar(CP_UTF8, 0, title.ptr, (int)title.len, titleWide, titleWideSize);
     titleWide[titleWideSize] = '\0';
 
-    int messageWideSize = MultiByteToWideChar(CP_UTF8, 0, message.ptr, message.len, NULL, 0);
+    int messageWideSize = MultiByteToWideChar(CP_UTF8, 0, message.ptr, (int)message.len, NULL, 0);
     wchar_t* messageWide = oc_arena_push_array(scratch.arena, wchar_t, messageWideSize + 1);
-    MultiByteToWideChar(CP_UTF8, 0, message.ptr, message.len, messageWide, messageWideSize);
+    MultiByteToWideChar(CP_UTF8, 0, message.ptr, (int)message.len, messageWide, messageWideSize);
     messageWide[messageWideSize] = '\0';
 
     TASKDIALOGCONFIG config = {
@@ -1652,7 +1656,7 @@ int oc_alert_popup(oc_str8 title,
         .pszMainIcon = TD_WARNING_ICON,
         .pszMainInstruction = messageWide,
         .pszContent = NULL,
-        .cButtons = options.eltCount,
+        .cButtons = (UINT)options.eltCount,
         .pButtons = buttons,
         .nDefaultButton = 0,
     };

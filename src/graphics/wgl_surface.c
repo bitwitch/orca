@@ -152,19 +152,20 @@ void oc_wgl_surface_present(oc_surface_data* interface)
 
 void oc_wgl_surface_deselect(oc_surface_data* interface)
 {
+    (void)interface;
     wglMakeCurrent(NULL, NULL);
     oc_gl_deselect_api();
 }
 
 void oc_wgl_surface_swap_interval(oc_surface_data* interface, int swap)
 {
-    oc_wgl_surface* surface = (oc_wgl_surface*)interface;
+    (void)interface;
     wglSwapIntervalEXT(swap);
 }
 
 void* oc_wgl_get_proc(const char* name)
 {
-    void* p = wglGetProcAddress(name);
+    void* p = (void*)wglGetProcAddress(name);
     if(p == 0
        || p == (void*)0x01
        || p == (void*)0x02

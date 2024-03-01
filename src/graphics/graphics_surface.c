@@ -351,7 +351,8 @@ oc_image oc_image_create(oc_surface surface, u32 width, u32 height)
     {
         OC_DEBUG_ASSERT(surfaceData->api == OC_CANVAS);
 
-        oc_image_data* imageData = surfaceData->backend->imageCreate(surfaceData->backend, (oc_vec2){ width, height });
+        oc_image_data* imageData = surfaceData->backend->imageCreate(surfaceData->backend, 
+                                                                    (oc_vec2){ (f32)width, (f32)height });
         if(imageData)
         {
             imageData->surface = surface;

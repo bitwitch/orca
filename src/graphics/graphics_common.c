@@ -15,7 +15,10 @@
     #define STBI_NO_STDIO
     #define STBI_NO_HDR
 #endif
+#pragma warning(push)
+#pragma warning(disable: 4100)
 #include "stb/stb_image.h"
+#pragma warning(pop)
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb/stb_truetype.h"
@@ -206,7 +209,7 @@ void* oc_graphics_data_from_handle(oc_graphics_handle_kind kind, u64 h)
     u32 index = h >> 32;
     u32 generation = h & 0xffffffff;
 
-    if(index < oc_graphicsData.handleNextIndex)
+    if(index < (u32)oc_graphicsData.handleNextIndex)
     {
         oc_graphics_handle_slot* slot = &oc_graphicsData.handleArray[index];
         if(slot->generation == generation
@@ -391,29 +394,31 @@ oc_font oc_font_create_from_memory(oc_str8 mem, u32 rangeCount, oc_unicode_range
         stbtt_InitFont(&stbttFontInfo, (byte*)mem.ptr, 0);
 
         //NOTE(martin): load font metrics data
-        font->unitsPerEm = 1. / stbtt_ScaleForMappingEmToPixels(&stbttFontInfo, 1);
+        font->unitsPerEm = 1.0f / stbtt_ScaleForMappingEmToPixels(&stbttFontInfo, 1);
 
-        int ascent, descent, lineGap, x0, x1, y0, y1;
-        stbtt_GetFontVMetrics(&stbttFontInfo, &ascent, &descent, &lineGap);
-        stbtt_GetFontBoundingBox(&stbttFontInfo, &x0, &y0, &x1, &y1);
+        {
+            int ascent, descent, lineGap, x0, x1, y0, y1;
+            stbtt_GetFontVMetrics(&stbttFontInfo, &ascent, &descent, &lineGap);
+            stbtt_GetFontBoundingBox(&stbttFontInfo, &x0, &y0, &x1, &y1);
 
-        font->metrics.ascent = ascent;
-        font->metrics.descent = -descent;
-        font->metrics.lineGap = lineGap;
-        font->metrics.width = x1 - x0;
+            font->metrics.ascent = (f32)ascent;
+            font->metrics.descent = (f32)-descent;
+            font->metrics.lineGap = (f32)lineGap;
+            font->metrics.width = (f32)(x1 - x0);
 
-        stbtt_GetCodepointBox(&stbttFontInfo, 'x', &x0, &y0, &x1, &y1);
-        font->metrics.xHeight = y1 - y0;
+            stbtt_GetCodepointBox(&stbttFontInfo, 'x', &x0, &y0, &x1, &y1);
+            font->metrics.xHeight = (f32)(y1 - y0);
 
-        stbtt_GetCodepointBox(&stbttFontInfo, 'M', &x0, &y0, &x1, &y1);
-        font->metrics.capHeight = y1 - y0;
+            stbtt_GetCodepointBox(&stbttFontInfo, 'M', &x0, &y0, &x1, &y1);
+            font->metrics.capHeight = (f32)(y1 - y0);
+        }
 
         //NOTE(martin): load codepoint ranges
         font->rangeCount = rangeCount;
         font->glyphMap = oc_malloc_array(oc_glyph_map_entry, rangeCount);
         font->glyphCount = 0;
 
-        for(int i = 0; i < rangeCount; i++)
+        for(u32 i = 0; i < rangeCount; i++)
         {
             //NOTE(martin): initialize the map entry.
             //              The glyph indices are offseted by 1, to reserve 0 as an invalid glyph index.
@@ -426,13 +431,13 @@ oc_font oc_font_create_from_memory(oc_str8 mem, u32 rangeCount, oc_unicode_range
 
         //NOTE(martin): first do a count of outlines
         int outlineCount = 0;
-        for(int rangeIndex = 0; rangeIndex < rangeCount; rangeIndex++)
+        for(u32 rangeIndex = 0; rangeIndex < rangeCount; rangeIndex++)
         {
             oc_utf32 codePoint = font->glyphMap[rangeIndex].range.firstCodePoint;
             u32 firstGlyphIndex = font->glyphMap[rangeIndex].firstGlyphIndex;
             u32 endGlyphIndex = firstGlyphIndex + font->glyphMap[rangeIndex].range.count;
 
-            for(int glyphIndex = firstGlyphIndex;
+            for(u32 glyphIndex = firstGlyphIndex;
                 glyphIndex < endGlyphIndex; glyphIndex++)
             {
                 int stbttGlyphIndex = stbtt_FindGlyphIndex(&stbttFontInfo, codePoint);
@@ -454,13 +459,13 @@ oc_font oc_font_create_from_memory(oc_str8 mem, u32 rangeCount, oc_unicode_range
         font->outlineCount = 0;
 
         //NOTE(martin): load metrics and outlines
-        for(int rangeIndex = 0; rangeIndex < rangeCount; rangeIndex++)
+        for(u32 rangeIndex = 0; rangeIndex < rangeCount; rangeIndex++)
         {
             oc_utf32 codePoint = font->glyphMap[rangeIndex].range.firstCodePoint;
             u32 firstGlyphIndex = font->glyphMap[rangeIndex].firstGlyphIndex;
             u32 endGlyphIndex = firstGlyphIndex + font->glyphMap[rangeIndex].range.count;
 
-            for(int glyphIndex = firstGlyphIndex;
+            for(u32 glyphIndex = firstGlyphIndex;
                 glyphIndex < endGlyphIndex; glyphIndex++)
             {
                 oc_glyph_data* glyph = &(font->glyphs[glyphIndex - 1]);
@@ -485,13 +490,13 @@ oc_font oc_font_create_from_memory(oc_str8 mem, u32 rangeCount, oc_unicode_range
                 //NOTE(martin): stb stbtt_GetGlyphBox returns bottom left and top right corners, with y up,
                 //              so we have to set .y = -y1
                 glyph->metrics.ink = (oc_rect){
-                    .x = x0,
-                    .y = -y1,
-                    .w = x1 - x0,
-                    .h = y1 - y0
+                    .x = (f32)x0,
+                    .y = (f32)-y1,
+                    .w = (f32)(x1 - x0),
+                    .h = (f32)(y1 - y0)
                 };
 
-                glyph->metrics.advance = (oc_vec2){ xAdvance, 0 };
+                glyph->metrics.advance = (oc_vec2){ (f32)xAdvance, 0 };
 
                 //NOTE(martin): load glyph outlines
 
@@ -613,7 +618,7 @@ oc_str32 oc_font_get_glyph_indices_from_font_data(oc_font_data* fontData, oc_str
     for(int i = 0; i < count; i++)
     {
         u32 glyphIndex = 0;
-        for(int rangeIndex = 0; rangeIndex < fontData->rangeCount; rangeIndex++)
+        for(u32 rangeIndex = 0; rangeIndex < fontData->rangeCount; rangeIndex++)
         {
             if(codePoints.ptr[i] >= fontData->glyphMap[rangeIndex].range.firstCodePoint
                && codePoints.ptr[i] < (fontData->glyphMap[rangeIndex].range.firstCodePoint + fontData->glyphMap[rangeIndex].range.count))
@@ -799,9 +804,9 @@ oc_text_metrics oc_font_text_metrics_utf32(oc_font font, f32 fontSize, oc_str32 
         {
             missingGlyphMetrics = (oc_glyph_metrics){
                 .ink = {
-                    .x = fontData->metrics.width * 0.1,
+                    .x = fontData->metrics.width * 0.1f,
                     .y = -fontData->metrics.ascent,
-                    .w = fontData->metrics.width * 0.8,
+                    .w = fontData->metrics.width * 0.8f,
                     .h = fontData->metrics.ascent,
                 },
                 .advance = { .x = fontData->metrics.width, .y = 0 },
@@ -1420,7 +1425,7 @@ oc_rect oc_glyph_outlines_from_font_data(oc_font_data* fontData, oc_str32 glyphI
 
         f32 xOffset = canvas->subPathLastPoint.x;
         f32 yOffset = canvas->subPathLastPoint.y;
-        f32 flip = canvas->textFlip ? 1 : -1;
+        f32 flip = canvas->textFlip ? 1.0f : -1.0f;
 
         if(!glyphIndex || glyphIndex >= fontData->glyphCount)
         {
@@ -1443,9 +1448,9 @@ oc_rect oc_glyph_outlines_from_font_data(oc_font_data* fontData, oc_str32 glyphI
                 {
                     missingGlyphMetrics = (oc_glyph_metrics){
                         .ink = {
-                            .x = fontData->metrics.width * 0.1,
+                            .x = fontData->metrics.width * 0.1f,
                             .y = -fontData->metrics.ascent,
-                            .w = fontData->metrics.width * 0.8,
+                            .w = fontData->metrics.width * 0.8f,
                             .h = fontData->metrics.ascent,
                         },
                         .advance = { .x = fontData->metrics.width, .y = 0 },
@@ -1454,7 +1459,7 @@ oc_rect oc_glyph_outlines_from_font_data(oc_font_data* fontData, oc_str32 glyphI
 
                 f32 oldStrokeWidth = canvas->attributes.width;
 
-                oc_set_width(missingGlyphMetrics.ink.w * 0.005);
+                oc_set_width(missingGlyphMetrics.ink.w * 0.005f);
                 oc_rectangle_stroke(xOffset + missingGlyphMetrics.ink.x * scale,
                                     yOffset + missingGlyphMetrics.ink.y * scale,
                                     missingGlyphMetrics.ink.w * scale * flip,
@@ -1472,7 +1477,7 @@ oc_rect oc_glyph_outlines_from_font_data(oc_font_data* fontData, oc_str32 glyphI
         oc_path_push_elements(canvas, glyph->pathDescriptor.count, fontData->outlines + glyph->pathDescriptor.startIndex);
 
         oc_path_elt* elements = canvas->pathElements + canvas->path.count + canvas->path.startIndex - glyph->pathDescriptor.count;
-        for(int eltIndex = 0; eltIndex < glyph->pathDescriptor.count; eltIndex++)
+        for(u32 eltIndex = 0; eltIndex < glyph->pathDescriptor.count; eltIndex++)
         {
             for(int pIndex = 0; pIndex < 3; pIndex++)
             {
@@ -1609,7 +1614,7 @@ void oc_rectangle_stroke(f32 x, f32 y, f32 w, f32 h)
 void oc_rounded_rectangle_path(f32 x, f32 y, f32 w, f32 h, f32 r)
 {
     r = oc_min(r, oc_min(w / 2, h / 2));
-    f32 c = r * 4 * (sqrt(2) - 1) / 3;
+    f32 c = r * 4 * (sqrtf(2) - 1) / 3;
 
     oc_move_to(x + r, y);
     oc_line_to(x + w - r, y);
@@ -1636,8 +1641,8 @@ void oc_rounded_rectangle_stroke(f32 x, f32 y, f32 w, f32 h, f32 r)
 
 void oc_ellipse_path(f32 x, f32 y, f32 rx, f32 ry)
 {
-    f32 cx = rx * 4 * (sqrt(2) - 1) / 3;
-    f32 cy = ry * 4 * (sqrt(2) - 1) / 3;
+    f32 cx = rx * 4 * (sqrtf(2) - 1) / 3;
+    f32 cy = ry * 4 * (sqrtf(2) - 1) / 3;
 
     oc_move_to(x - rx, y);
     oc_cubic_to(x - rx, y + cy, x - cx, y + ry, x, y + ry);
@@ -1675,20 +1680,20 @@ void oc_arc(f32 x, f32 y, f32 r, f32 arcAngle, f32 startAngle)
 
     while(startAngle < endAngle)
     {
-        f32 smallAngle = oc_min(endAngle - startAngle, M_PI / 4.);
+        f32 smallAngle = oc_min(endAngle - startAngle, (f32)(M_PI / 4.));
         if(smallAngle < 0.001)
         {
             break;
         }
 
-        oc_vec2 v0 = { cos(smallAngle / 2), sin(smallAngle / 2) };
+        oc_vec2 v0 = { cosf(smallAngle / 2), sinf(smallAngle / 2) };
         oc_vec2 v1 = { (4 - v0.x) / 3, (1 - v0.x) * (3 - v0.x) / (3 * v0.y) };
         oc_vec2 v2 = { v1.x, -v1.y };
         oc_vec2 v3 = { v0.x, -v0.y };
 
         f32 rotAngle = smallAngle / 2 + startAngle;
-        f32 rotCos = cos(rotAngle);
-        f32 rotSin = sin(rotAngle);
+        f32 rotCos = cosf(rotAngle);
+        f32 rotSin = sinf(rotAngle);
 
         oc_mat2x3 t = { r * rotCos, -r * rotSin, x,
                         r * rotSin, r * rotCos, y };
@@ -1725,7 +1730,7 @@ oc_image oc_image_create_from_rgba8(oc_surface surface, u32 width, u32 height, u
     oc_image image = oc_image_create(surface, width, height);
     if(!oc_image_is_nil(image))
     {
-        oc_image_upload_region_rgba8(image, (oc_rect){ 0, 0, width, height }, pixels);
+        oc_image_upload_region_rgba8(image, (oc_rect){ 0, 0, (f32)width, (f32)height }, pixels);
     }
     return (image);
 }
@@ -1736,7 +1741,7 @@ oc_image oc_image_create_from_memory(oc_surface surface, oc_str8 mem, bool flip)
     int width, height, channels;
 
     stbi_set_flip_vertically_on_load(flip ? 1 : 0);
-    u8* pixels = stbi_load_from_memory((u8*)mem.ptr, mem.len, &width, &height, &channels, 4);
+    u8* pixels = stbi_load_from_memory((u8*)mem.ptr, (int)mem.len, &width, &height, &channels, 4);
 
     if(pixels)
     {
@@ -1859,7 +1864,7 @@ oc_rect oc_rect_atlas_alloc(oc_rect_atlas* atlas, i32 width, i32 height)
         if(atlas->pos.x + width < atlas->size.x
            && atlas->pos.y + height < atlas->size.y)
         {
-            rect = (oc_rect){ atlas->pos.x, atlas->pos.y, width, height };
+            rect = (oc_rect){ (f32)atlas->pos.x, (f32)atlas->pos.y, (f32)width, (f32)height };
 
             atlas->pos.x += (width + 1);
             atlas->lineHeight = oc_max(atlas->lineHeight, height);
@@ -1870,6 +1875,8 @@ oc_rect oc_rect_atlas_alloc(oc_rect_atlas* atlas, i32 width, i32 height)
 
 void oc_rect_atlas_recycle(oc_rect_atlas* atlas, oc_rect rect)
 {
+    (void)atlas;
+    (void)rect;
     //TODO
 }
 
@@ -1894,7 +1901,7 @@ oc_image_region oc_image_atlas_alloc_from_memory(oc_rect_atlas* atlas, oc_image 
     int width, height, channels;
 
     stbi_set_flip_vertically_on_load(flip ? 1 : 0);
-    u8* pixels = stbi_load_from_memory((u8*)mem.ptr, mem.len, &width, &height, &channels, 4);
+    u8* pixels = stbi_load_from_memory((u8*)mem.ptr, (int)mem.len, &width, &height, &channels, 4);
     if(pixels)
     {
         imageRgn = oc_image_atlas_alloc_from_rgba8(atlas, backingImage, width, height, pixels);

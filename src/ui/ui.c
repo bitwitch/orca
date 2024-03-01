@@ -168,7 +168,6 @@ void oc_ui_tag_next_str8(oc_str8 string)
 //-----------------------------------------------------------------------------
 oc_ui_key oc_ui_key_make_str8(oc_str8 string)
 {
-    oc_ui_context* ui = oc_ui_get_context();
     u64 seed = 0;
     oc_ui_box* parent = oc_ui_box_top();
     if(parent)
@@ -183,7 +182,6 @@ oc_ui_key oc_ui_key_make_str8(oc_str8 string)
 
 oc_ui_key oc_ui_key_make_path(oc_str8_list path)
 {
-    oc_ui_context* ui = oc_ui_get_context();
     u64 seed = 0;
     oc_ui_box* parent = oc_ui_box_top();
     if(parent)
@@ -481,7 +479,6 @@ oc_ui_box* oc_ui_box_make_str8(oc_str8 string, oc_ui_flags flags)
 
 oc_ui_box* oc_ui_box_begin_str8(oc_str8 string, oc_ui_flags flags)
 {
-    oc_ui_context* ui = oc_ui_get_context();
     oc_ui_box* box = oc_ui_box_make_str8(string, flags);
     oc_ui_box_push(box);
     return (box);
@@ -489,7 +486,6 @@ oc_ui_box* oc_ui_box_begin_str8(oc_str8 string, oc_ui_flags flags)
 
 oc_ui_box* oc_ui_box_end(void)
 {
-    oc_ui_context* ui = oc_ui_get_context();
     oc_ui_box* box = oc_ui_box_top();
     OC_DEBUG_ASSERT(box, "box stack underflow");
 
@@ -630,7 +626,7 @@ void oc_ui_animate_f32(oc_ui_context* ui, f32* value, f32 target, f32 animationT
 			Here we bake alpha = 1/tau = -ln(0.05)/tr, with tr the rise time to 95% of target
 		*/
         f32 alpha = 3 / animationTime;
-        f32 dt = ui->lastFrameDuration;
+        f32 dt = (f32)ui->lastFrameDuration;
 
         *value += (target - *value) * alpha * dt;
     }
@@ -1357,7 +1353,7 @@ void oc_ui_layout_compute_rect(oc_ui_context* ui, oc_ui_box* box, oc_vec2 pos)
     if(align[layoutAxis] == OC_UI_ALIGN_CENTER)
     {
         currentPos.c[layoutAxis] = origin.c[layoutAxis]
-                                 + 0.5 * (box->rect.c[2 + layoutAxis] - (box->childrenSum[layoutAxis] + box->spacing[layoutAxis]));
+                                 + 0.5f * (box->rect.c[2 + layoutAxis] - (box->childrenSum[layoutAxis] + box->spacing[layoutAxis]));
     }
 
     currentPos.x -= box->scroll.x;
@@ -1367,7 +1363,7 @@ void oc_ui_layout_compute_rect(oc_ui_context* ui, oc_ui_box* box, oc_vec2 pos)
     {
         if(align[secondAxis] == OC_UI_ALIGN_CENTER)
         {
-            currentPos.c[secondAxis] = origin.c[secondAxis] + 0.5 * (box->rect.c[2 + secondAxis] - child->rect.c[2 + secondAxis]);
+            currentPos.c[secondAxis] = origin.c[secondAxis] + 0.5f * (box->rect.c[2 + secondAxis] - child->rect.c[2 + secondAxis]);
         }
 
         oc_vec2 childPos = currentPos;
@@ -1504,8 +1500,8 @@ void oc_ui_draw_box(oc_ui_box* box)
     {
         oc_rect clip = oc_clip_top();
         oc_rect expRect = {
-            box->rect.x - 0.5 * style->borderSize,
-            box->rect.y - 0.5 * style->borderSize,
+            box->rect.x - 0.5f * style->borderSize,
+            box->rect.y - 0.5f * style->borderSize,
             box->rect.w + style->borderSize,
             box->rect.h + style->borderSize
         };
@@ -1559,7 +1555,7 @@ void oc_ui_draw_box(oc_ui_box* box)
                 break;
 
             case OC_UI_ALIGN_CENTER:
-                x = box->rect.x + 0.5 * (box->rect.w - textBox.w);
+                x = box->rect.x + 0.5f * (box->rect.w - textBox.w);
                 break;
         }
 
@@ -1574,7 +1570,7 @@ void oc_ui_draw_box(oc_ui_box* box)
                 break;
 
             case OC_UI_ALIGN_CENTER:
-                y = box->rect.y + 0.5 * (box->rect.h - textBox.h) - textBox.y;
+                y = box->rect.y + 0.5f * (box->rect.h - textBox.h) - textBox.y;
                 break;
         }
 
@@ -1685,8 +1681,8 @@ void oc_ui_end_frame(void)
 
     oc_ui_box_pop();
 
-    oc_ui_box* box = oc_ui_box_end();
-    OC_DEBUG_ASSERT(box == ui->root, "unbalanced box stack");
+    oc_ui_box* box_end = oc_ui_box_end();
+    OC_DEBUG_ASSERT(box_end == ui->root, "unbalanced box stack");
 
     //TODO: check balancing of style stacks
 
@@ -1849,23 +1845,24 @@ oc_ui_sig oc_ui_button(const char* label)
 
 void oc_ui_checkbox_draw(oc_ui_box* box, void* data)
 {
+    (void)data;
     oc_mat2x3 matrix = {
         box->rect.w, 0, box->rect.x,
         0, box->rect.h, box->rect.y
     };
     oc_matrix_multiply_push(matrix);
 
-    oc_move_to(0.7255, 0.3045);
-    oc_cubic_to(0.7529, 0.3255, 0.7581, 0.3647, 0.7371, 0.3921);
-    oc_line_to(0.4663, 0.7463);
-    oc_cubic_to(0.4545, 0.7617, 0.4363, 0.7708, 0.4169, 0.7708);
-    oc_cubic_to(0.3975, 0.7709, 0.3792, 0.762, 0.3673, 0.7467);
-    oc_line_to(0.2215, 0.5592);
-    oc_cubic_to(0.2003, 0.532, 0.2052, 0.4927, 0.2325, 0.4715);
-    oc_cubic_to(0.2597, 0.4503, 0.299, 0.4552, 0.3202, 0.4825);
-    oc_line_to(0.4162, 0.606);
-    oc_line_to(0.6379, 0.3162);
-    oc_cubic_to(0.6588, 0.2888, 0.698, 0.2836, 0.7255, 0.3045);
+    oc_move_to(0.7255f, 0.3045f);
+    oc_cubic_to(0.7529f, 0.3255f, 0.7581f, 0.3647f, 0.7371f, 0.3921f);
+    oc_line_to(0.4663f, 0.7463f);
+    oc_cubic_to(0.4545f, 0.7617f, 0.4363f, 0.7708f, 0.4169f, 0.7708f);
+    oc_cubic_to(0.3975f, 0.7709f, 0.3792f, 0.762f, 0.3673f, 0.7467f);
+    oc_line_to(0.2215f, 0.5592f);
+    oc_cubic_to(0.2003f, 0.532f, 0.2052f, 0.4927f, 0.2325f, 0.4715f);
+    oc_cubic_to(0.2597f, 0.4503f, 0.299f, 0.4552f, 0.3202f, 0.4825f);
+    oc_line_to(0.4162f, 0.606f);
+    oc_line_to(0.6379f, 0.3162f);
+    oc_cubic_to(0.6588f, 0.2888f, 0.698f, 0.2836f, 0.7255f, 0.3045f);
 
     oc_set_color(box->style.color);
     oc_fill();
@@ -2005,16 +2002,16 @@ oc_ui_box* oc_ui_slider_str8(oc_str8 name, f32* value)
         f32 beforeRatio, afterRatio, thumbRatio, trackFillRatio;
         if(trackAxis == OC_UI_AXIS_X)
         {
-            thumbRatio = oc_min(thumbSize / frame->rect.w, 1.);
-            beforeRatio = (*value) * (1. - thumbRatio);
-            afterRatio = (1. - *value) * (1. - thumbRatio);
+            thumbRatio = oc_min(thumbSize / frame->rect.w, 1.0f);
+            beforeRatio = (*value) * (1.0f - thumbRatio);
+            afterRatio = (1.0f - *value) * (1.0f - thumbRatio);
             trackFillRatio = beforeRatio + thumbRatio / 2;
         }
         else
         {
-            thumbRatio = oc_min(thumbSize / frame->rect.h, 1.);
-            beforeRatio = (1. - *value) * (1. - thumbRatio);
-            afterRatio = (*value) * (1. - thumbRatio);
+            thumbRatio = oc_min(thumbSize / frame->rect.h, 1.0f);
+            beforeRatio = (1.0f - *value) * (1.0f - thumbRatio);
+            afterRatio = (*value) * (1.0f - thumbRatio);
             trackFillRatio = thumbRatio / 2 + afterRatio;
         }
 
@@ -2080,7 +2077,7 @@ oc_ui_box* oc_ui_slider_str8(oc_str8 name, f32* value)
         oc_ui_style beforeSpacerStyle = { 0 };
         beforeSpacerStyle.size.c[trackAxis] = (oc_ui_size){ OC_UI_SIZE_PARENT, beforeRatio };
         oc_ui_style_next(&beforeSpacerStyle, OC_UI_STYLE_SIZE);
-        oc_ui_box* beforeSpacer = oc_ui_box_make("before_spacer", 0);
+        oc_ui_box_make("before_spacer", 0);
 
         oc_ui_style thumbStyle = { .size.width = (oc_ui_size){ OC_UI_SIZE_PIXELS, thumbSize },
                                    .size.height = (oc_ui_size){ OC_UI_SIZE_PIXELS, thumbSize },
@@ -2113,7 +2110,7 @@ oc_ui_box* oc_ui_slider_str8(oc_str8 name, f32* value)
         oc_ui_style afterSpacerStyle = { 0 };
         afterSpacerStyle.size.c[trackAxis] = (oc_ui_size){ OC_UI_SIZE_PARENT, afterRatio };
         oc_ui_style_next(&afterSpacerStyle, OC_UI_STYLE_SIZE);
-        oc_ui_box* afterSpacer = oc_ui_box_make("after_spacer", 0);
+        oc_ui_box_make("after_spacer", 0);
 
         //NOTE: interaction
         oc_ui_sig thumbSig = oc_ui_box_sig(thumb);
@@ -2178,14 +2175,14 @@ oc_ui_box* oc_ui_scrollbar_str8(oc_str8 name, f32 thumbRatio, f32* scrollValue)
     oc_ui_style_match_before(oc_ui_pattern_all(), &(oc_ui_style){ 0 }, OC_UI_STYLE_LAYOUT);
     oc_ui_box* frame = oc_ui_box_begin_str8(name, 0);
     {
-        f32 minThumbRatio = 17. / oc_max(frame->rect.w, frame->rect.h);
-        thumbRatio = oc_min(oc_max(thumbRatio, minThumbRatio), 1.);
-        f32 beforeRatio = (*scrollValue) * (1. - thumbRatio);
-        f32 afterRatio = (1. - *scrollValue) * (1. - thumbRatio);
+        f32 minThumbRatio = 17.0f / oc_max(frame->rect.w, frame->rect.h);
+        thumbRatio = oc_min(oc_max(thumbRatio, minThumbRatio), 1.0f);
+        f32 beforeRatio = (*scrollValue) * (1.0f - thumbRatio);
+        f32 afterRatio = (1.0f - *scrollValue) * (1.0f - thumbRatio);
 
         oc_ui_axis trackAxis = (frame->rect.w > frame->rect.h) ? OC_UI_AXIS_X : OC_UI_AXIS_Y;
         oc_ui_axis secondAxis = (trackAxis == OC_UI_AXIS_Y) ? OC_UI_AXIS_X : OC_UI_AXIS_Y;
-        f32 roundness = 0.5 * frame->rect.c[2 + secondAxis];
+        f32 roundness = 0.5f * frame->rect.c[2 + secondAxis];
 
         oc_ui_style trackStyle = { .size.width = { OC_UI_SIZE_PARENT, 1 },
                                    .size.height = { OC_UI_SIZE_PARENT, 1 },
@@ -2219,7 +2216,7 @@ oc_ui_box* oc_ui_scrollbar_str8(oc_str8 name, f32 thumbRatio, f32* scrollValue)
         oc_ui_tag_box(track, "track");
 
         oc_ui_style_next(&beforeSpacerStyle, OC_UI_STYLE_SIZE);
-        oc_ui_box* beforeSpacer = oc_ui_box_make("before_spacer", 0);
+        oc_ui_box_make("before_spacer", 0);
 
         oc_ui_style thumbHoverActiveStyle = { .bgColor = theme->fill1 };
         oc_ui_pattern thumbHoverPattern = { 0 };
@@ -2251,7 +2248,7 @@ oc_ui_box* oc_ui_scrollbar_str8(oc_str8 name, f32 thumbRatio, f32* scrollValue)
         oc_ui_tag_box(thumb, "thumb");
 
         oc_ui_style_next(&afterSpacerStyle, OC_UI_STYLE_SIZE);
-        oc_ui_box* afterSpacer = oc_ui_box_make("after_spacer", 0);
+        oc_ui_box_make("after_spacer", 0);
 
         oc_ui_box_end();
 
@@ -2386,7 +2383,7 @@ void oc_ui_panel_end(void)
         f32 thumbRatioY = panel->rect.h / contentsH;
         f32 scrollValueY = panel->scroll.y / (contentsH - panel->rect.h);
 
-        f32 spacerSize = needsScrollX ? 10 : 0;
+        f32 spacerSize = needsScrollX ? 10.0f : 0.0f;
 
         oc_ui_style_next(&(oc_ui_style){ .size.width = { OC_UI_SIZE_PIXELS, 10, 0 },
                                          .size.height = { OC_UI_SIZE_PARENT_MINUS_PIXELS, spacerSize, 0 },
@@ -2412,6 +2409,7 @@ void oc_ui_panel_end(void)
 
 void oc_ui_tooltip_arrow_draw(oc_ui_box* box, void* data)
 {
+    (void)data;
     oc_mat2x3 matrix = {
         -box->rect.w, 0, box->rect.x + box->rect.w + 1,
         0, box->rect.h, box->rect.y
@@ -2419,11 +2417,11 @@ void oc_ui_tooltip_arrow_draw(oc_ui_box* box, void* data)
     oc_matrix_multiply_push(matrix);
 
     oc_move_to(0, 0);
-    oc_line_to(0.0417, 0);
-    oc_cubic_to(0.0417, 0.1667, 0.0833, 0.2292, 0.1667, 0.3125);
-    oc_quadratic_to(0.2917, 0.4167, 0.2917, 0.5);
-    oc_quadratic_to(0.25, 0.6042, 0.1667, 0.6875);
-    oc_quadratic_to(0.0417, 0.8333, 0.0417, 1);
+    oc_line_to(0.0417f, 0);
+    oc_cubic_to(0.0417f, 0.1667f, 0.0833f, 0.2292f, 0.1667f, 0.3125f);
+    oc_quadratic_to(0.2917f, 0.4167f, 0.2917f, 0.5f);
+    oc_quadratic_to(0.25f, 0.6042f, 0.1667f, 0.6875f);
+    oc_quadratic_to(0.0417f, 0.8333f, 0.0417f, 1);
     oc_line_to(0, 1);
     oc_line_to(0, 0);
 
@@ -2478,7 +2476,7 @@ void oc_ui_tooltip_str8(oc_str8 label)
                                       | OC_UI_STYLE_ROUNDNESS;
         oc_ui_style_next(&contentsStyle, contentsMask);
 
-        oc_ui_box* contents = oc_ui_box_begin("contents", OC_UI_FLAG_DRAW_BACKGROUND);
+        oc_ui_box_begin("contents", OC_UI_FLAG_DRAW_BACKGROUND);
 
         oc_ui_label_str8(label);
 
@@ -2555,7 +2553,7 @@ void oc_ui_menu_begin_str8(oc_str8 label)
     oc_ui_style_next(&(oc_ui_style){ .size.width = { OC_UI_SIZE_TEXT },
                                      .size.height = { OC_UI_SIZE_TEXT } },
                      OC_UI_STYLE_SIZE);
-    oc_ui_box* buttonLabel = oc_ui_box_make_str8(label, OC_UI_FLAG_DRAW_TEXT);
+    oc_ui_box_make_str8(label, OC_UI_FLAG_DRAW_TEXT);
 
     oc_ui_box_end(); // button
 
@@ -2678,22 +2676,23 @@ oc_ui_sig oc_ui_menu_button(const char* label)
 
 void oc_ui_select_popup_draw_arrow(oc_ui_box* box, void* data)
 {
+    (void)data;
     oc_mat2x3 matrix = {
         box->rect.w / 2, 0, box->rect.x + box->rect.w / 4,
         0, box->rect.h / 2, box->rect.y + box->rect.h / 4
     };
     oc_matrix_multiply_push(matrix);
 
-    oc_move_to(0.17, 0.3166);
-    oc_cubic_to(0.1944, 0.2922, 0.234, 0.2922, 0.2584, 0.3166);
-    oc_line_to(0.4941, 0.5523);
-    oc_line_to(0.7298, 0.3166);
-    oc_cubic_to(0.7542, 0.2922, 0.7938, 0.2922, 0.8182, 0.3166);
-    oc_cubic_to(0.8426, 0.341, 0.8426, 0.3806, 0.8182, 0.405);
-    oc_line_to(0.5383, 0.6849);
-    oc_cubic_to(0.5139, 0.7093, 0.4743, 0.7093, 0.4499, 0.6849);
-    oc_line_to(0.17, 0.405);
-    oc_cubic_to(0.1456, 0.3806, 0.1456, 0.341, 0.17, 0.3166);
+    oc_move_to(0.17f, 0.3166f);
+    oc_cubic_to(0.1944f, 0.2922f, 0.234f, 0.2922f, 0.2584f, 0.3166f);
+    oc_line_to(0.4941f, 0.5523f);
+    oc_line_to(0.7298f, 0.3166f);
+    oc_cubic_to(0.7542f, 0.2922f, 0.7938f, 0.2922f, 0.8182f, 0.3166f);
+    oc_cubic_to(0.8426f, 0.341f, 0.8426f, 0.3806f, 0.8182f, 0.405f);
+    oc_line_to(0.5383f, 0.6849f);
+    oc_cubic_to(0.5139f, 0.7093f, 0.4743f, 0.7093f, 0.4499f, 0.6849f);
+    oc_line_to(0.17f, 0.405f);
+    oc_cubic_to(0.1456f, 0.3806f, 0.1456f, 0.341f, 0.17f, 0.3166f);
     oc_close_path();
 
     oc_set_color(box->style.color);
@@ -2704,23 +2703,24 @@ void oc_ui_select_popup_draw_arrow(oc_ui_box* box, void* data)
 
 void oc_ui_select_popup_draw_checkmark(oc_ui_box* box, void* data)
 {
+    (void)data;
     oc_mat2x3 matrix = {
         box->rect.w, 0, box->rect.x,
         0, box->rect.h, box->rect.y
     };
     oc_matrix_multiply_push(matrix);
 
-    oc_move_to(0.8897, 0.1777);
-    oc_cubic_to(0.9181, 0.1973, 0.9252, 0.2362, 0.9056, 0.2647);
-    oc_line_to(0.489, 0.8688);
-    oc_cubic_to(0.4782, 0.8844, 0.4609, 0.8943, 0.442, 0.8957);
-    oc_cubic_to(0.4231, 0.897, 0.4046, 0.8898, 0.3917, 0.8759);
-    oc_line_to(0.1209, 0.5842);
-    oc_cubic_to(0.0974, 0.5589, 0.0988, 0.5194, 0.1241, 0.4959);
-    oc_cubic_to(0.1494, 0.4724, 0.189, 0.4738, 0.2125, 0.4991);
-    oc_line_to(0.4303, 0.7337);
-    oc_line_to(0.8027, 0.1937);
-    oc_cubic_to(0.8223, 0.1653, 0.8612, 0.1581, 0.8897, 0.1777);
+    oc_move_to(0.8897f, 0.1777f);
+    oc_cubic_to(0.9181f, 0.1973f, 0.9252f, 0.2362f, 0.9056f, 0.2647f);
+    oc_line_to(0.489f, 0.8688f);
+    oc_cubic_to(0.4782f, 0.8844f, 0.4609f, 0.8943f, 0.442f, 0.8957f);
+    oc_cubic_to(0.4231f, 0.897f, 0.4046f, 0.8898f, 0.3917f, 0.8759f);
+    oc_line_to(0.1209f, 0.5842f);
+    oc_cubic_to(0.0974f, 0.5589f, 0.0988f, 0.5194f, 0.1241f, 0.4959f);
+    oc_cubic_to(0.1494f, 0.4724f, 0.189f, 0.4738f, 0.2125f, 0.4991f);
+    oc_line_to(0.4303f, 0.7337f);
+    oc_line_to(0.8027f, 0.1937f);
+    oc_cubic_to(0.8223f, 0.1653f, 0.8612f, 0.1581f, 0.8897f, 0.1777f);
     oc_close_path();
 
     oc_set_color(box->style.color);
@@ -2878,13 +2878,13 @@ oc_ui_select_popup_info oc_ui_select_popup_str8(oc_str8 name, oc_ui_select_popup
                                      | OC_UI_STYLE_LAYOUT_MARGIN_Y
                                      | OC_UI_STYLE_BG_COLOR);
 
-                oc_ui_pattern hoverPattern = { 0 };
-                oc_ui_pattern_push(&ui->frameArena, &hoverPattern, (oc_ui_selector){ .kind = OC_UI_SEL_STATUS, .status = OC_UI_HOVER });
-                oc_ui_style_match_before(hoverPattern, &(oc_ui_style){ .bgColor = theme->fill0 }, OC_UI_STYLE_BG_COLOR);
+                oc_ui_pattern panelHoverPattern = { 0 };
+                oc_ui_pattern_push(&ui->frameArena, &panelHoverPattern, (oc_ui_selector){ .kind = OC_UI_SEL_STATUS, .status = OC_UI_HOVER });
+                oc_ui_style_match_before(panelHoverPattern, &(oc_ui_style){ .bgColor = theme->fill0 }, OC_UI_STYLE_BG_COLOR);
 
-                oc_ui_pattern activePattern = { 0 };
-                oc_ui_pattern_push(&ui->frameArena, &activePattern, (oc_ui_selector){ .kind = OC_UI_SEL_STATUS, .status = OC_UI_ACTIVE });
-                oc_ui_style_match_before(activePattern, &(oc_ui_style){ .bgColor = theme->fill2 }, OC_UI_STYLE_BG_COLOR);
+                oc_ui_pattern panelActivePattern = { 0 };
+                oc_ui_pattern_push(&ui->frameArena, &panelActivePattern, (oc_ui_selector){ .kind = OC_UI_SEL_STATUS, .status = OC_UI_ACTIVE });
+                oc_ui_style_match_before(panelActivePattern, &(oc_ui_style){ .bgColor = theme->fill2 }, OC_UI_STYLE_BG_COLOR);
 
                 oc_ui_box* wrapper = oc_ui_box_begin_str8(info->options[i],
                                                           OC_UI_FLAG_CLICKABLE | OC_UI_FLAG_DRAW_BACKGROUND);
@@ -2902,7 +2902,7 @@ oc_ui_select_popup_info oc_ui_select_popup_str8(oc_str8 name, oc_ui_select_popup
                     oc_ui_style_next(&(oc_ui_style){ .size.width = { OC_UI_SIZE_PIXELS, checkmarkSize },
                                                      .size.height = { OC_UI_SIZE_PIXELS, checkmarkSize } },
                                      OC_UI_STYLE_SIZE);
-                    oc_ui_box* spacer = oc_ui_box_make("spacer", 0);
+                    oc_ui_box_make("spacer", 0);
                 }
 
                 oc_ui_container("label", 0)
@@ -2910,7 +2910,7 @@ oc_ui_select_popup_info oc_ui_select_popup_str8(oc_str8 name, oc_ui_select_popup
                     oc_ui_style_next(&(oc_ui_style){ .size.width = { OC_UI_SIZE_PIXELS, maxOptionWidth },
                                                      .size.height = { OC_UI_SIZE_TEXT } },
                                      OC_UI_STYLE_SIZE);
-                    oc_ui_box* label = oc_ui_box_make_str8(info->options[i], OC_UI_FLAG_DRAW_TEXT);
+                    oc_ui_box_make_str8(info->options[i], OC_UI_FLAG_DRAW_TEXT);
                 }
 
                 oc_ui_sig sig = oc_ui_box_sig(wrapper);
@@ -2924,8 +2924,8 @@ oc_ui_select_popup_info oc_ui_select_popup_str8(oc_str8 name, oc_ui_select_popup
         }
         oc_ui_box_pop();
 
-        oc_ui_context* ui = oc_ui_get_context();
-        if(oc_ui_box_active(panel) && oc_mouse_released(&ui->input, OC_MOUSE_LEFT))
+        oc_ui_context* ctx = oc_ui_get_context();
+        if(oc_ui_box_active(panel) && oc_mouse_released(&ctx->input, OC_MOUSE_LEFT))
         {
             oc_ui_box_deactivate(button);
             oc_ui_box_deactivate(panel);
@@ -2959,6 +2959,7 @@ oc_ui_select_popup_info oc_ui_select_popup(const char* name, oc_ui_select_popup_
 
 void oc_ui_radio_indicator_draw(oc_ui_box* box, void* data)
 {
+    (void)data;
     oc_mat2x3 matrix = {
         box->rect.w, 0, box->rect.x,
         0, box->rect.h, box->rect.y
@@ -2966,7 +2967,7 @@ void oc_ui_radio_indicator_draw(oc_ui_box* box, void* data)
     oc_matrix_multiply_push(matrix);
 
     oc_set_color(box->style.color);
-    oc_circle_fill(0.5, 0.5, 35.0 / 192);
+    oc_circle_fill(0.5f, 0.5f, 35.0f / 192);
 
     oc_matrix_pop();
 }
@@ -3738,6 +3739,7 @@ oc_str32 oc_ui_edit_perform_operation(oc_ui_context* ui, oc_ui_edit_op operation
 
 i32 oc_ui_edit_find_word_start(oc_ui_context* ui, oc_str32 codepoints, i32 startChar)
 {
+    (void)ui;
     i32 c = startChar;
     if(oc_ui_edit_is_whitespace(codepoints.ptr[startChar]))
     {
@@ -3758,6 +3760,7 @@ i32 oc_ui_edit_find_word_start(oc_ui_context* ui, oc_str32 codepoints, i32 start
 
 i32 oc_ui_edit_find_word_end(oc_ui_context* ui, oc_str32 codepoints, i32 startChar)
 {
+    (void)ui;
     i32 c = oc_min(startChar + 1, codepoints.len);
     if(startChar < codepoints.len && oc_ui_edit_is_whitespace(codepoints.ptr[startChar]))
     {
@@ -3795,7 +3798,7 @@ void oc_ui_text_box_render(oc_ui_box* box, void* data)
     oc_rect beforeBox = oc_font_text_metrics_utf32(style->font, style->fontSize, before).logical;
 
     f32 textX = box->rect.x - beforeBox.w;
-    f32 textTop = box->rect.y + 0.5 * (box->rect.h - lineHeight);
+    f32 textTop = box->rect.y + 0.5f * (box->rect.h - lineHeight);
     f32 textY = textTop + extents.ascent;
 
     if(box->active)
@@ -4110,7 +4113,7 @@ oc_ui_text_box_result oc_ui_text_box_str8(oc_str8 name, oc_arena* arena, oc_str8
                 OC_ASSERT(0, "unknown host platform: %i", hostPlatform);
         }
 
-        for(int i = 0; i < editCommandCount; i++)
+        for(u32 i = 0; i < editCommandCount; i++)
         {
             const oc_ui_edit_command* command = &(editCommands[i]);
 
@@ -4125,8 +4128,8 @@ oc_ui_text_box_result oc_ui_text_box_str8(oc_str8 name, oc_arena* arena, oc_str8
         if(sig.pasted)
         {
             oc_str8 pastedText = oc_clipboard_pasted_text(&ui->input);
-            oc_str32 input = oc_utf8_push_to_codepoints(&ui->frameArena, pastedText);
-            codepoints = oc_ui_edit_replace_selection_with_codepoints(ui, codepoints, input);
+            oc_str32 pastedInput = oc_utf8_push_to_codepoints(&ui->frameArena, pastedText);
+            codepoints = oc_ui_edit_replace_selection_with_codepoints(ui, codepoints, pastedInput);
         }
 
         //NOTE(martin): check changed/accepted
@@ -4191,6 +4194,8 @@ oc_ui_text_box_result oc_ui_text_box(const char* name, oc_arena* arena, oc_str8 
     return oc_ui_text_box_str8(OC_STR8(name), arena, text);
 }
 
+#pragma warning(push)
+#pragma warning(disable: 4305)
 //------------------------------------------------------------------------------
 // Themes
 // doc/UIColors.md has them visualized
@@ -4577,3 +4582,5 @@ oc_ui_theme OC_UI_LIGHT_THEME = {
     .roundnessMedium = 6,
     .roundnessLarge = 9
 };
+
+#pragma warning(pop)

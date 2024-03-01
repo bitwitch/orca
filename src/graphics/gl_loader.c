@@ -11,6 +11,8 @@
 oc_thread_local oc_gl_api* oc_glAPI = 0;
 oc_gl_api oc_glNoAPI;
 
+#pragma warning(push)
+#pragma warning(disable: 4100 4152)
 void oc_glGetFloatv_noimpl(GLenum pname, GLfloat* data)
 {
     if(oc_glAPI == &oc_glNoAPI)
@@ -10000,3 +10002,5 @@ void oc_gl_select_api(oc_gl_api* api) { oc_glAPI = api; }
 void oc_gl_deselect_api() { oc_glAPI = &oc_glNoAPI; }
 
 oc_gl_api* oc_gl_get_api(void) { return (oc_glAPI); }
+
+#pragma warning(pop)

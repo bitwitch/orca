@@ -140,6 +140,13 @@ def build_platform_layer_lib_win(release):
         "/I", "src/ext",
         "/I", "src/ext/angle/include",
     ]
+
+    debug_flags = ["/W4", "/WX", "/wd4057"]
+    if release:
+        debug_flags.extend(["/O2"])
+    else:
+        debug_flags.extend(["/Zi", "/DOC_DEBUG", "/DOC_LOG_COMPILE_DEBUG", "/fsanitize=address"])
+
     libs = [
         "user32.lib",
         "opengl32.lib",
@@ -162,9 +169,10 @@ def build_platform_layer_lib_win(release):
 
     subprocess.run([
         "cl", "/nologo",
-        "/we4013", "/Zi", "/Zc:preprocessor",
+        "/Zc:preprocessor",
         "/DOC_BUILD_DLL",
         "/std:c11", "/experimental:c11atomics",
+        *debug_flags,
         *includes,
         "src/orca.c", "/Fo:build/bin/orca.o",
         "/LD", "/link",
