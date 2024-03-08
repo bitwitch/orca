@@ -18,6 +18,8 @@ jobs:
 
       - name: Download Angle
         uses: actions/download-artifact@v4
+        with:
+          name: angle-windows-2022-${{github.ref_name}}
 
       - name: Extract Angle
         shell: cmd
@@ -62,6 +64,8 @@ jobs:
 
       - name: Download Angle
         uses: actions/download-artifact@v4
+        with:
+          name: angle-macos-13-${{github.ref_name}}
 
       - name: Extract Angle
         run: |
@@ -95,6 +99,8 @@ jobs:
 
       - name: Download Angle
         uses: actions/download-artifact@v4
+        with:
+          name: angle-macos-13-${{github.ref_name}}
 
       - name: Extract Angle
         run: |

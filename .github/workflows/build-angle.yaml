@@ -5,12 +5,9 @@ on: [workflow_dispatch, workflow_call]
 jobs:
   build-win:
     name: Build (Windows)
-    strategy:
-      matrix:
-        os: [windows-2022]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-2022
     env:
-      BUILD_OS: ${{ matrix.os }}
+      BUILD_OS: windows-2022
     outputs:
       ANGLE_COMMIT: ${{ steps.build.outputs.ANGLE_COMMIT }}
       BUILD_DATE: ${{ steps.build.outputs.BUILD_DATE }}
@@ -27,18 +24,15 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: "angle-${{ matrix.os }}-${{ github.ref_name }}"
-          path: "angle-${{ matrix.os }}-${{ github.ref_name }}.tar.gz"
+          name: "angle-windows-2022-${{ github.ref_name }}"
+          path: "angle-windows-2022-${{ github.ref_name }}.tar.gz"
           if-no-files-found: error
 
   build-mac:
     name: Build (Mac)
-    strategy:
-      matrix:
-        os: [macos-13]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-13
     env:
-      BUILD_OS: ${{ matrix.os }}
+      BUILD_OS: macos-13
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -50,7 +44,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: "angle-${{ matrix.os }}-${{ github.ref_name }}"
-          path: "angle-${{ matrix.os }}-${{ github.ref_name }}.tar.gz"
+          name: "angle-macos-13-${{ github.ref_name }}"
+          path: "angle-macos-13-${{ github.ref_name }}.tar.gz"
           if-no-files-found: error
 
