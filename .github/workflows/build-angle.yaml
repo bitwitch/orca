@@ -45,7 +45,7 @@ jobs:
 
       - name: Build
         id: build
-        run: scripts/build.sh
+        run: scripts/build_angle.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
