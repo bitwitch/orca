@@ -7,10 +7,32 @@ on:
       - main
 
 jobs:
+  build-angle:
+    uses: ./.github/workflows/build-angle.yaml
+
   build-win:
     runs-on: windows-2022
+    needs: build-angle
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download Angle
+        uses: actions/download-artifact@v4
+        with:
+          name: angle-windows-2022-${{github.ref_name}}
+
+      - name: Extract Angle
+        shell: cmd
+        run: |
+          tar -xzf angle-windows-2022-${{github.ref_name}}.tar.gz
+          mkdir build
+          mkdir build\bin
+          mkdir build\lib
+          mkdir src\ext\angle
+          mkdir src\ext\angle\include
+          xcopy /S /I /Q /Y angle\bin build\bin
+          xcopy /S /I /Q /Y angle\lib build\lib
+          xcopy /S /I /Q /Y angle\include src\ext\angle\include
 
       - uses: actions/setup-python@v4
         with:
@@ -35,9 +57,23 @@ jobs:
           path: orca-runtime-win.tar.gz
 
   build-macos-x64:
-    runs-on: macos-latest
+    runs-on: macos-13
+    needs: build-angle
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download Angle
+        uses: actions/download-artifact@v4
+        with:
+          name: angle-macos-13-${{github.ref_name}}
+
+      - name: Extract Angle
+        run: |
+          tar -xzf angle-macos-13-${{github.ref_name}}.tar.gz
+          mkdir -p build/bin
+          mkdir -p src/ext/angle/include
+          cp -r angle/bin/* build/bin
+          cp -r angle/include/* src/ext/angle/include
 
       - uses: actions/setup-python@v4
         with:
@@ -57,8 +93,22 @@ jobs:
 
   build-macos-arm64:
     runs-on: [self-hosted, macos]
+    needs: build-angle
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download Angle
+        uses: actions/download-artifact@v4
+        with:
+          name: angle-macos-13-${{github.ref_name}}
+
+      - name: Extract Angle
+        run: |
+          tar -xzf angle-macos-13-${{github.ref_name}}.tar.gz
+          mkdir -p build/bin
+          mkdir -p src/ext/angle/include
+          cp -r angle/bin/* build/bin
+          cp -r angle/include/* src/ext/angle/include
 
       - uses: actions/setup-python@v4
         with:

@@ -5,7 +5,6 @@ import re
 import urllib.request
 import shutil
 import subprocess
-from zipfile import ZipFile
 import tarfile
 
 from . import checksum
@@ -15,18 +14,19 @@ from .gles_gen import gles_gen
 from .log import *
 from .utils import pushd, removeall, yeetdir, yeetfile
 from .embed_text_files import *
-from .version import orca_version
+from .version import current_sdk_version, dev_version
 
 ANGLE_VERSION = "2023-07-05"
 MAC_SDK_DIR = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
 
 def attach_dev_commands(subparsers):
     build_cmd = subparsers.add_parser("build-runtime", help="Build the Orca runtime from source.")
-    build_cmd.add_argument("--release", action="store_true", help="compile Orca in release mode (default is debug)")
+    build_cmd.add_argument("--release", action="store_true", help="Compile Orca in release mode (default is debug)")
+    build_cmd.add_argument("--angle-version", dest="angle_version", default=None, help="Specify a specific version of angle to use (default is the version from the latest release)")
     build_cmd.set_defaults(func=dev_shellish(build_runtime))
 
     tool_cmd = subparsers.add_parser("build-tool", help="Build the Orca CLI tool from source.")
-    tool_cmd.add_argument("--version", help="embed a version string in the Orca CLI tool (default is git commit hash)")
+    tool_cmd.add_argument("--version", help="Embed a version string in the Orca CLI tool (default is git commit hash)")
     tool_cmd.add_argument("--release", action="store_true",
         help="compile Orca CLI tool in release mode (default is debug)")
     tool_cmd.set_defaults(func=dev_shellish(build_tool))
@@ -48,7 +48,7 @@ def dev_shellish(func):
 
 def build_runtime(args):
     ensure_programs()
-    ensure_angle()
+    ensure_angle(args.angle_version)
 
     build_platform_layer("lib", args.release)
     build_wasm3(args.release)
@@ -500,16 +500,7 @@ def ensure_programs():
             exit(1)
 
 
-def ensure_angle():
-    if not verify_angle():
-        download_angle()
-        print("Verifying ANGLE download...")
-        if not verify_angle():
-            log_error("automatic ANGLE download failed")
-            exit(1)
-
-
-def verify_angle():
+def ensure_angle(version):
     checkfiles = None
     if platform.system() == "Windows":
         checkfiles = [
@@ -524,6 +515,26 @@ def verify_angle():
             "build/bin/libGLESv2.dylib",
         ]
 
+    # NOTE: the GITHUB_ACTIONS environment variable is defined by default in any workflow
+    if "GITHUB_ACTIONS" in os.environ:
+        if not verify_angle(checkfiles):
+            log_error("failed to find angle libs during a CI build")
+            exit(1)
+    else:
+        if version != None:
+            # always download angle if --version arg is specified
+            for file in checkfiles:
+                yeetfile(file)
+            yeetdir("src/ext/angle")
+
+        if not verify_angle(checkfiles):
+            download_angle(version)
+            print("Verifying ANGLE download...")
+            if not verify_angle(checkfiles):
+                log_error("automatic ANGLE download failed")
+                exit(1)
+
+def verify_angle(checkfiles):
     if checkfiles is None:
         log_warning("could not verify if the correct version of ANGLE is present")
         return False
@@ -531,40 +542,55 @@ def verify_angle():
     ok = True
     for file in checkfiles:
         if not os.path.isfile(file):
+            log_warning(f"file not found {file}")
             ok = False
             continue
-        if not checksum.checkfile(file):
-            ok = False
-            continue
+
+        # NOTE(shaw): single angle version is now variable and when building in
+        # CI there will not be a checksum available for each angle file,
+        # checksum verfication is being disabled. this shouldn't be an issue
+        # since only local dev builds will be downloading angle.
+        #----------------------------------------------------------------------
+        # if not checksum.checkfile(file):
+            # ok = False
+            # continue
 
     return ok
 
 
-def download_angle():
+def download_angle(version):
+    if version == None:
+        version = current_sdk_version()
+    
     print("Downloading ANGLE...")
     if platform.system() == "Windows":
-        build = "windows-2019"
+        build = "windows-2022"
     elif platform.system() == "Darwin":
-        build = "macos-jank"
+        build = "macos-13"
     else:
         log_error(f"could not automatically download ANGLE for unknown platform {platform.system()}")
         return
 
     os.makedirs("scripts/files", exist_ok=True)
-    filename = f"angle-{build}-{ANGLE_VERSION}.zip"
+
+    filename = f"angle-{build}-{version}.tar.gz"
     filepath = f"scripts/files/{filename}"
-    url = f"https://github.com/HandmadeNetwork/build-angle/releases/download/{ANGLE_VERSION}/{filename}"
-    with urllib.request.urlopen(url) as response:
-        with open(filepath, "wb") as out:
-            shutil.copyfileobj(response, out)
+    url = f"https://github.com/orca-app/orca/releases/download/{version}/{filename}"
+    try:
+        with urllib.request.urlopen(url) as response:
+            with open(filepath, "wb") as out:
+                shutil.copyfileobj(response, out)
+    except urllib.error.HTTPError as error:
+        log_error(f"failed to download angle libs: {error.status}: {error.reason}")
+        exit(1)
 
     if not checksum.checkfile(filepath):
         log_error(f"ANGLE download did not match checksum")
         exit(1)
 
     print("Extracting ANGLE...")
-    with ZipFile(filepath, "r") as anglezip:
-        anglezip.extractall(path="scripts/files")
+    with tarfile.open(filepath, "r") as tar_file:
+        tar_file.extractall(path="scripts/files")
 
     shutil.copytree(f"scripts/files/angle/include", "src/ext/angle/include", dirs_exist_ok=True)
     shutil.copytree(f"scripts/files/angle/bin", "build/bin", dirs_exist_ok=True)
@@ -810,7 +836,7 @@ def install(args):
         print()
 
     orca_dir = system_orca_dir()
-    version = orca_version()
+    version = dev_version()
     dest = os.path.join(orca_dir, version)
 
     bin_dir = os.path.join(dest, "bin")

@@ -1,0 +1,50 @@
+name: build-angle
+
+on: [workflow_dispatch, workflow_call]
+
+jobs:
+  build-win:
+    name: Build (Windows)
+    runs-on: windows-2022
+    env:
+      BUILD_OS: windows-2022
+    outputs:
+      ANGLE_COMMIT: ${{ steps.build.outputs.ANGLE_COMMIT }}
+      BUILD_DATE: ${{ steps.build.outputs.BUILD_DATE }}
+      GITHUB_REF_NAME: ${{ steps.build.outputs.GITHUB_REF_NAME }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Build
+        id: build
+        shell: cmd
+        run: call scripts/build_angle.cmd
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "angle-windows-2022-${{ github.ref_name }}"
+          path: "angle-windows-2022-${{ github.ref_name }}.tar.gz"
+          if-no-files-found: error
+
+  build-mac:
+    name: Build (Mac)
+    runs-on: macos-13
+    env:
+      BUILD_OS: macos-13
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Build
+        id: build
+        run: scripts/build_angle.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "angle-macos-13-${{ github.ref_name }}"
+          path: "angle-macos-13-${{ github.ref_name }}.tar.gz"
+          if-no-files-found: error
+
