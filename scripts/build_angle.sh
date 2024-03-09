@@ -34,7 +34,7 @@ fi
 # Build ANGLE
 pushd angle_src
 gclient sync
-gn gen out/Release --args="is_debug=false is_component_build=false"
+gn gen out/Release --args="is_debug=false is_component_build=false angle_enable_metal=true angle_enable_glsl=true angle_enable_d3d9=false angle_enable_d3d11=false angle_enable_gl=false angle_enable_null=false angle_enable_vulkan=false angle_enable_essl=false"
 autoninja -C out/Release
 popd
 
